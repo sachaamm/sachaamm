@@ -1,4 +1,4 @@
-### Hi there 👋
+### Hello World 👋 My name is ~~Alexandre Amiel~~ sachaamm. I'm a developer from ~~Marseille~~ France.
 
 <!--
 **sachaamm/sachaamm** is a ✨ _special_ ✨ repository because its `README.md` (this file) appears on your GitHub profile.
