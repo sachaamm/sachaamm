@@ -11,9 +11,19 @@
 
 <p align="center">
   <a href="https://github.com/sachaamm?tab=repositories">
-    <img src="https://img.shields.io/badge/Projects-54%2B-1f6feb?style=for-the-badge&logo=github&logoColor=white" alt="Projects"/>
+    <img src="https://img.shields.io/badge/Total_Repos-203-1f6feb?style=for-the-badge&logo=github&logoColor=white" alt="Total repositories"/>
   </a>
+  <img src="https://img.shields.io/badge/Private_Repos-149-6e40c9?style=for-the-badge&logo=github&logoColor=white" alt="Private repositories"/>
   <img src="https://komarev.com/ghpvc/?username=sachaamm&style=for-the-badge&color=1f6feb&label=Profile+Views" alt="Profile views"/>
+</p>
+
+<p align="center">
+  <a href="https://alexandreamiel.dev">
+    <img src="https://img.shields.io/badge/Portfolio-alexandreamiel.dev-FF5722?style=for-the-badge&logo=googlechrome&logoColor=white" alt="Portfolio"/>
+  </a>
+  <a href="https://www.linkedin.com/in/alexandre-amiel-dev/">
+    <img src="https://img.shields.io/badge/LinkedIn-Alexandre_Amiel-0A66C2?style=for-the-badge&logo=linkedin&logoColor=white" alt="LinkedIn"/>
+  </a>
 </p>
 
 ---
@@ -64,19 +74,4 @@
 | [**formation-ts-nest-angular**](https://github.com/sachaamm/formation-ts-nest-angular) | Fullstack TypeScript course (NestJS + Angular) I teach at ESGI | `TypeScript` |
 | [**apify-reddit-keyword-scraper**](https://github.com/sachaamm/apify-reddit-keyword-scraper) | Apify actor that scrapes Reddit by keywords | `JavaScript` |
 | [**dotnet-spa-auth-template**](https://github.com/sachaamm/dotnet-spa-auth-template) | Ready-to-use .NET + SPA authentication starter template | `C#` |
-| [**deploy-unity-mirror-with-docker-and-kubernetes**](https://github.com/sachaamm/deploy-unity-mirror-with-docker-and-kubernetes-helloworld) | Deploying a Unity Mirror multiplayer server with Docker & Kubernetes | `C#` · `K8s` |
-| [**rust-web-app**](https://github.com/sachaamm/rust-web-app) | Experimenting with web development in Rust | `Rust` |
-
-➡️ Browse all my work on the [repositories tab](https://github.com/sachaamm?tab=repositories).
-
----
-
-### 📫 Reach me
-
-<p align="left">
-  <a href="https://github.com/sachaamm">
-    <img src="https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white" alt="GitHub"/>
-  </a>
-</p>
-
-<p align="center"><i>⚡ Fun fact: I move between game engines and web stacks daily — and somehow that's the fun part.</i></p>
+| [**deploy-unity-mirror-with-docker-and-kubernetes**](https://github.com/sachaamm/deploy-unity-mirror-with-docker-and-kubernetes-helloworld) | Deploying a Unity Mirror multiplayer server with Docker & Kub
