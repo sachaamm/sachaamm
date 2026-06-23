@@ -1,4 +1,6 @@
-<h1 align="center">Hi, I'm sachaamm 👋</h1>
+<h1 align="center">Hi, I'm Alexandre Amiel 👋</h1>
+
+<p align="center"><i>aka <b>sachaamm</b></i></p>
 
 <p align="center">
   🎮 Indie game developer &nbsp;•&nbsp; 🌐 Web developer &nbsp;•&nbsp; 🚀 Founder of <b>Indie Island Studio</b>
@@ -6,7 +8,7 @@
 
 <p align="center">
   I build my own products — from Unity games to web apps and developer tools.<br/>
-  Based in France 🇫🇷 &nbsp;|&nbsp; Always shipping something.
+  Based in Marseille, France 🇫🇷 &nbsp;|&nbsp; Always shipping something.
 </p>
 
 <p align="center">
@@ -74,4 +76,4 @@
 | [**formation-ts-nest-angular**](https://github.com/sachaamm/formation-ts-nest-angular) | Fullstack TypeScript course (NestJS + Angular) I teach at ESGI | `TypeScript` |
 | [**apify-reddit-keyword-scraper**](https://github.com/sachaamm/apify-reddit-keyword-scraper) | Apify actor that scrapes Reddit by keywords | `JavaScript` |
 | [**dotnet-spa-auth-template**](https://github.com/sachaamm/dotnet-spa-auth-template) | Ready-to-use .NET + SPA authentication starter template | `C#` |
-| [**deploy-unity-mirror-with-docker-and-kubernetes**](https://github.com/sachaamm/deploy-unity-mirror-with-docker-and-kubernetes-helloworld) | Deploying a Unity Mirror multiplayer server with Docker & Kub
+| [**deploy-unity-mirror-with-docker-and-kubernetes**](https://github.com/sachaamm/deploy-unity-mirror-with-docker-and-kubernetes-hellowo
