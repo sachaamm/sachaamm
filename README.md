@@ -12,7 +12,7 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/sachaamm?tab=repositories">
+  <a href="https://github.com/sachaamm?tab=repositories" target="_blank" rel="noopener noreferrer">
     <img src="https://img.shields.io/badge/Total_Repos-203-1f6feb?style=for-the-badge&logo=github&logoColor=white" alt="Total repositories"/>
   </a>
   <img src="https://img.shields.io/badge/Private_Repos-149-6e40c9?style=for-the-badge&logo=github&logoColor=white" alt="Private repositories"/>
@@ -20,10 +20,10 @@
 </p>
 
 <p align="center">
-  <a href="https://alexandreamiel.dev">
+  <a href="https://alexandreamiel.dev" target="_blank" rel="noopener noreferrer">
     <img src="https://img.shields.io/badge/Portfolio-alexandreamiel.dev-FF5722?style=for-the-badge&logo=googlechrome&logoColor=white" alt="Portfolio"/>
   </a>
-  <a href="https://www.linkedin.com/in/alexandre-amiel-dev/">
+  <a href="https://www.linkedin.com/in/alexandre-amiel-dev/" target="_blank" rel="noopener noreferrer">
     <img src="https://img.shields.io/badge/LinkedIn-Alexandre_Amiel-0A66C2?style=for-the-badge&logo=linkedin&logoColor=white" alt="LinkedIn"/>
   </a>
 </p>
@@ -86,13 +86,13 @@
 ### 📫 Reach me
 
 <p align="left">
-  <a href="https://alexandreamiel.dev">
+  <a href="https://alexandreamiel.dev" target="_blank" rel="noopener noreferrer">
     <img src="https://img.shields.io/badge/Website-alexandreamiel.dev-FF5722?style=for-the-badge&logo=googlechrome&logoColor=white" alt="Website"/>
   </a>
-  <a href="https://www.linkedin.com/in/alexandre-amiel-dev/">
+  <a href="https://www.linkedin.com/in/alexandre-amiel-dev/" target="_blank" rel="noopener noreferrer">
     <img src="https://img.shields.io/badge/LinkedIn-0A66C2?style=for-the-badge&logo=linkedin&logoColor=white" alt="LinkedIn"/>
   </a>
-  <a href="https://github.com/sachaamm">
+  <a href="https://github.com/sachaamm" target="_blank" rel="noopener noreferrer">
     <img src="https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white" alt="GitHub"/>
   </a>
 </p>
@@ -104,16 +104,16 @@
 My indie game studio — follow along as we build and ship games:
 
 <p align="left">
-  <a href="https://www.youtube.com/@indieislandstudiogames">
+  <a href="https://www.youtube.com/@indieislandstudiogames" target="_blank" rel="noopener noreferrer">
     <img src="https://img.shields.io/badge/YouTube-FF0000?style=for-the-badge&logo=youtube&logoColor=white" alt="YouTube"/>
   </a>
-  <a href="https://x.com/indie_island_">
+  <a href="https://x.com/indie_island_" target="_blank" rel="noopener noreferrer">
     <img src="https://img.shields.io/badge/X-000000?style=for-the-badge&logo=x&logoColor=white" alt="X / Twitter"/>
   </a>
-  <a href="https://www.tiktok.com/@indieislandstudiogames">
+  <a href="https://www.tiktok.com/@indieislandstudiogames" target="_blank" rel="noopener noreferrer">
     <img src="https://img.shields.io/badge/TikTok-000000?style=for-the-badge&logo=tiktok&logoColor=white" alt="TikTok"/>
   </a>
-  <a href="https://www.linkedin.com/company/indie-island-studio">
+  <a href="https://www.linkedin.com/company/indie-island-studio" target="_blank" rel="noopener noreferrer">
     <img src="https://img.shields.io/badge/LinkedIn_Page-0A66C2?style=for-the-badge&logo=linkedin&logoColor=white" alt="Studio LinkedIn"/>
   </a>
 </p>
