@@ -76,4 +76,48 @@
 | [**formation-ts-nest-angular**](https://github.com/sachaamm/formation-ts-nest-angular) | Fullstack TypeScript course (NestJS + Angular) I teach at ESGI | `TypeScript` |
 | [**apify-reddit-keyword-scraper**](https://github.com/sachaamm/apify-reddit-keyword-scraper) | Apify actor that scrapes Reddit by keywords | `JavaScript` |
 | [**dotnet-spa-auth-template**](https://github.com/sachaamm/dotnet-spa-auth-template) | Ready-to-use .NET + SPA authentication starter template | `C#` |
-| [**deploy-unity-mirror-with-docker-and-kubernetes**](https://github.com/sachaamm/deploy-unity-mirror-with-docker-and-kubernetes-hellowo
+| [**deploy-unity-mirror-with-docker-and-kubernetes**](https://github.com/sachaamm/deploy-unity-mirror-with-docker-and-kubernetes-helloworld) | Deploying a Unity Mirror multiplayer server with Docker & Kubernetes | `C#` · `K8s` |
+| [**rust-web-app**](https://github.com/sachaamm/rust-web-app) | Experimenting with web development in Rust | `Rust` |
+
+➡️ Browse all my work on the [repositories tab](https://github.com/sachaamm?tab=repositories).
+
+---
+
+### 📫 Reach me
+
+<p align="left">
+  <a href="https://alexandreamiel.dev">
+    <img src="https://img.shields.io/badge/Website-alexandreamiel.dev-FF5722?style=for-the-badge&logo=googlechrome&logoColor=white" alt="Website"/>
+  </a>
+  <a href="https://www.linkedin.com/in/alexandre-amiel-dev/">
+    <img src="https://img.shields.io/badge/LinkedIn-0A66C2?style=for-the-badge&logo=linkedin&logoColor=white" alt="LinkedIn"/>
+  </a>
+  <a href="https://github.com/sachaamm">
+    <img src="https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white" alt="GitHub"/>
+  </a>
+</p>
+
+---
+
+### 🏝️ Indie Island Studio
+
+My indie game studio — follow along as we build and ship games:
+
+<p align="left">
+  <a href="https://www.youtube.com/@indieislandstudiogames">
+    <img src="https://img.shields.io/badge/YouTube-FF0000?style=for-the-badge&logo=youtube&logoColor=white" alt="YouTube"/>
+  </a>
+  <a href="https://x.com/indie_island_">
+    <img src="https://img.shields.io/badge/X-000000?style=for-the-badge&logo=x&logoColor=white" alt="X / Twitter"/>
+  </a>
+  <a href="https://www.tiktok.com/@indieislandstudiogames">
+    <img src="https://img.shields.io/badge/TikTok-000000?style=for-the-badge&logo=tiktok&logoColor=white" alt="TikTok"/>
+  </a>
+  <a href="https://www.linkedin.com/company/indie-island-studio">
+    <img src="https://img.shields.io/badge/LinkedIn_Page-0A66C2?style=for-the-badge&logo=linkedin&logoColor=white" alt="Studio LinkedIn"/>
+  </a>
+</p>
+
+---
+
+<p align="center"><i>⚡ Fun fact: I move between game engines and web stacks daily — and somehow that's the fun part.</i></p>
