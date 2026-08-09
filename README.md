@@ -3,20 +3,17 @@
 <p align="center"><i>aka <b>sachaamm</b></i></p>
 
 <p align="center">
-  🎮 Indie game developer &nbsp;•&nbsp; 🌐 Web developer &nbsp;•&nbsp; 🚀 Founder of <b>Indie Island Studio</b>
+  <b>Senior Full-Stack Engineer</b> &nbsp;•&nbsp; .NET / C# &nbsp;•&nbsp; Angular &nbsp;•&nbsp; AI Integration
 </p>
 
 <p align="center">
-  I build my own products — from Unity games to web apps and developer tools.<br/>
-  Based in Marseille, France 🇫🇷 &nbsp;|&nbsp; Always shipping something.
+  I build and modernize production web applications, and design agentic tooling
+  (LLM orchestration, MCP servers, n8n pipelines) that removes manual work.<br/>
+  I also teach fullstack TypeScript at ESGI, and run <b>Indie Island Studio</b> on the side.
 </p>
 
 <p align="center">
-  <a href="https://github.com/sachaamm?tab=repositories" target="_blank" rel="noopener noreferrer">
-    <img src="https://img.shields.io/badge/Total_Repos-203-1f6feb?style=for-the-badge&logo=github&logoColor=white" alt="Total repositories"/>
-  </a>
-  <img src="https://img.shields.io/badge/Private_Repos-149-6e40c9?style=for-the-badge&logo=github&logoColor=white" alt="Private repositories"/>
-  <img src="https://komarev.com/ghpvc/?username=sachaamm&style=for-the-badge&color=1f6feb&label=Profile+Views" alt="Profile views"/>
+  Marseille, France 🇫🇷 &nbsp;|&nbsp; US citizen &nbsp;|&nbsp; Open to remote roles
 </p>
 
 <p align="center">
@@ -26,6 +23,7 @@
   <a href="https://www.linkedin.com/in/alexandre-amiel-dev/" target="_blank" rel="noopener noreferrer">
     <img src="https://img.shields.io/badge/LinkedIn-Alexandre_Amiel-0A66C2?style=for-the-badge&logo=linkedin&logoColor=white" alt="LinkedIn"/>
   </a>
+  <img src="https://komarev.com/ghpvc/?username=sachaamm&style=for-the-badge&color=1f6feb&label=Profile+Views" alt="Profile views"/>
 </p>
 
 ---
@@ -33,20 +31,24 @@
 ### 🛠️ Tech Stack
 
 <p align="left">
+  <img src="https://img.shields.io/badge/C%23-512BD4?style=flat-square&logo=csharp&logoColor=white" alt="C#"/>
+  <img src="https://img.shields.io/badge/.NET-512BD4?style=flat-square&logo=dotnet&logoColor=white" alt=".NET"/>
+  <img src="https://img.shields.io/badge/ASP.NET_Core-5C2D91?style=flat-square&logo=dotnet&logoColor=white" alt="ASP.NET Core"/>
+  <img src="https://img.shields.io/badge/SQL_Server-CC2927?style=flat-square&logo=microsoftsqlserver&logoColor=white" alt="SQL Server"/>
+  <br/>
   <img src="https://img.shields.io/badge/TypeScript-3178C6?style=flat-square&logo=typescript&logoColor=white" alt="TypeScript"/>
-  <img src="https://img.shields.io/badge/JavaScript-F7DF1E?style=flat-square&logo=javascript&logoColor=black" alt="JavaScript"/>
   <img src="https://img.shields.io/badge/Angular-DD0031?style=flat-square&logo=angular&logoColor=white" alt="Angular"/>
   <img src="https://img.shields.io/badge/NestJS-E0234E?style=flat-square&logo=nestjs&logoColor=white" alt="NestJS"/>
   <img src="https://img.shields.io/badge/Node.js-339933?style=flat-square&logo=nodedotjs&logoColor=white" alt="Node.js"/>
   <br/>
-  <img src="https://img.shields.io/badge/C%23-512BD4?style=flat-square&logo=csharp&logoColor=white" alt="C#"/>
-  <img src="https://img.shields.io/badge/.NET-512BD4?style=flat-square&logo=dotnet&logoColor=white" alt=".NET"/>
-  <img src="https://img.shields.io/badge/Unity-000000?style=flat-square&logo=unity&logoColor=white" alt="Unity"/>
-  <img src="https://img.shields.io/badge/Rust-000000?style=flat-square&logo=rust&logoColor=white" alt="Rust"/>
+  <img src="https://img.shields.io/badge/LLM_APIs-412991?style=flat-square&logo=openai&logoColor=white" alt="LLM APIs"/>
+  <img src="https://img.shields.io/badge/MCP-D97757?style=flat-square&logo=anthropic&logoColor=white" alt="Model Context Protocol"/>
+  <img src="https://img.shields.io/badge/n8n-EA4B71?style=flat-square&logo=n8n&logoColor=white" alt="n8n"/>
   <br/>
   <img src="https://img.shields.io/badge/Docker-2496ED?style=flat-square&logo=docker&logoColor=white" alt="Docker"/>
   <img src="https://img.shields.io/badge/Kubernetes-326CE5?style=flat-square&logo=kubernetes&logoColor=white" alt="Kubernetes"/>
-  <img src="https://img.shields.io/badge/Electron-47848F?style=flat-square&logo=electron&logoColor=white" alt="Electron"/>
+  <img src="https://img.shields.io/badge/Unity-000000?style=flat-square&logo=unity&logoColor=white" alt="Unity"/>
+  <img src="https://img.shields.io/badge/Rust-000000?style=flat-square&logo=rust&logoColor=white" alt="Rust"/>
 </p>
 
 ---
@@ -54,8 +56,8 @@
 ### 📊 GitHub Stats
 
 <p align="center">
-  <img height="170" src="https://github-readme-stats.vercel.app/api?username=sachaamm&show_icons=true&theme=tokyonight&hide_border=true&count_private=true" alt="GitHub stats"/>
-  <img height="170" src="https://github-readme-stats.vercel.app/api/top-langs/?username=sachaamm&layout=compact&theme=tokyonight&hide_border=true&langs_count=8" alt="Top languages"/>
+  <img height="180" src="https://github-profile-summary-cards.vercel.app/api/cards/stats?username=sachaamm&theme=tokyonight" alt="GitHub stats"/>
+  <img height="180" src="https://github-profile-summary-cards.vercel.app/api/cards/repos-per-language?username=sachaamm&theme=tokyonight" alt="Top languages"/>
 </p>
 
 <p align="center">
@@ -72,14 +74,14 @@
 
 | Project | Description | Tech |
 |---------|-------------|------|
-| [**my-tab-switcher-chrome-extension**](https://github.com/sachaamm/my-tab-switcher-chrome-extension) | Chrome extension to quickly switch to the previous or next tab with a shortcut | `JavaScript` |
-| [**formation-ts-nest-angular**](https://github.com/sachaamm/formation-ts-nest-angular) | Fullstack TypeScript course (NestJS + Angular) I teach at ESGI | `TypeScript` |
-| [**apify-reddit-keyword-scraper**](https://github.com/sachaamm/apify-reddit-keyword-scraper) | Apify actor that scrapes Reddit by keywords | `JavaScript` |
-| [**dotnet-spa-auth-template**](https://github.com/sachaamm/dotnet-spa-auth-template) | Ready-to-use .NET + SPA authentication starter template | `C#` |
-| [**deploy-unity-mirror-with-docker-and-kubernetes**](https://github.com/sachaamm/deploy-unity-mirror-with-docker-and-kubernetes-helloworld) | Deploying a Unity Mirror multiplayer server with Docker & Kubernetes | `C#` · `K8s` |
-| [**rust-web-app**](https://github.com/sachaamm/rust-web-app) | Experimenting with web development in Rust | `Rust` |
+| [**formation-ts-nest-angular**](https://github.com/sachaamm/formation-ts-nest-angular) | Fullstack TypeScript course (NestJS + Angular) I designed and teach at ESGI | `TypeScript` · `Angular` · `NestJS` |
+| [**dotnet-spa-auth-template**](https://github.com/sachaamm/dotnet-spa-auth-template) | Production-ready authentication starter for ASP.NET Core + SPA front-ends | `C#` · `.NET` |
+| [**linkedin-setter-template**](https://github.com/sachaamm/linkedin-setter-template) | Agentic appointment-setting chatbot — n8n orchestration + hosted decision brain | `n8n` · `LLM` |
+| [**deploy-unity-mirror-with-docker-and-kubernetes**](https://github.com/sachaamm/deploy-unity-mirror-with-docker-and-kubernetes-helloworld) | Containerizing and orchestrating a stateful realtime server on Kubernetes | `Docker` · `K8s` · `C#` |
+| [**apify-reddit-keyword-scraper**](https://github.com/sachaamm/apify-reddit-keyword-scraper) | Published Apify actor that scrapes Reddit by keyword | `JavaScript` |
+| [**my-tab-switcher-chrome-extension**](https://github.com/sachaamm/my-tab-switcher-chrome-extension) | Chrome extension to jump to the previous or next tab with a shortcut | `JavaScript` |
 
-➡️ Browse all my work on the [repositories tab](https://github.com/sachaamm?tab=repositories).
+➡️ Browse everything on the [repositories tab](https://github.com/sachaamm?tab=repositories).
 
 ---
 
@@ -92,16 +94,13 @@
   <a href="https://www.linkedin.com/in/alexandre-amiel-dev/" target="_blank" rel="noopener noreferrer">
     <img src="https://img.shields.io/badge/LinkedIn-0A66C2?style=for-the-badge&logo=linkedin&logoColor=white" alt="LinkedIn"/>
   </a>
-  <a href="https://github.com/sachaamm" target="_blank" rel="noopener noreferrer">
-    <img src="https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white" alt="GitHub"/>
-  </a>
 </p>
 
 ---
 
 ### 🏝️ Indie Island Studio
 
-My indie game studio — follow along as we build and ship games:
+My indie game studio — where I ship Unity games on the side:
 
 <p align="left">
   <a href="https://www.youtube.com/@indieislandstudiogames" target="_blank" rel="noopener noreferrer">
@@ -117,7 +116,3 @@ My indie game studio — follow along as we build and ship games:
     <img src="https://img.shields.io/badge/LinkedIn_Page-0A66C2?style=for-the-badge&logo=linkedin&logoColor=white" alt="Studio LinkedIn"/>
   </a>
 </p>
-
----
-
-<p align="center"><i>⚡ Fun fact: I move between game engines and web stacks daily — and somehow that's the fun part.</i></p>
