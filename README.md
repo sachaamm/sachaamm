@@ -55,18 +55,28 @@
 
 ### 📊 GitHub Stats
 
-<p align="center">
-  <img height="180" src="https://github-profile-summary-cards.vercel.app/api/cards/stats?username=sachaamm&theme=tokyonight" alt="GitHub stats"/>
-  <img height="180" src="https://github-profile-summary-cards.vercel.app/api/cards/repos-per-language?username=sachaamm&theme=tokyonight" alt="Top languages"/>
-</p>
+> Regenerated weekly from the GitHub API across **all 229 repositories — private ones included**.
+> Private repos are counted in every figure but never named. See [SETUP.md](SETUP.md) for how it works.
 
-<p align="center">
-  <img src="https://github-readme-streak-stats.herokuapp.com/?user=sachaamm&theme=tokyonight&hide_border=true" alt="GitHub streak"/>
-</p>
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="assets/overview-dark.svg">
+  <img alt="GitHub at a glance: 229 repositories, 8,200 commits, 11.4 years active" src="assets/overview-light.svg" width="840">
+</picture>
 
-<p align="center">
-  <img src="https://github-readme-activity-graph.vercel.app/graph?username=sachaamm&theme=tokyo-night&hide_border=true&area=true" alt="Activity graph"/>
-</p>
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="assets/activity-dark.svg">
+  <img alt="Commit volume by year, 2015 to 2026" src="assets/activity-light.svg" width="840">
+</picture>
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="assets/stack-dark.svg">
+  <img alt="Detected stack: Angular, Docker, Vercel, Next.js, NestJS and more" src="assets/stack-light.svg" width="840">
+</picture>
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="assets/agentic-dark.svg">
+  <img alt="AI and agentic tooling: CLAUDE.md, AGENTS.md and .mcp.json committed across repositories" src="assets/agentic-light.svg" width="840">
+</picture>
 
 ---
 
