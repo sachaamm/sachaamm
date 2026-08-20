@@ -23,7 +23,9 @@ jobs:
           # STATS_TOKEN = PAT classique, scopes repo + read:org + read:user.
           # Le GITHUB_TOKEN natif d'Actions ne voit QUE ce dépôt : il ne suffit pas.
           GITHUB_TOKEN: ${{ secrets.STATS_TOKEN }}
-        run: python3 scripts/collect.py --out data/github-profile.json
+        run: |
+          mkdir -p data
+          python3 scripts/collect.py --out data/github-profile.json
 
       - name: Safety check — refuse to continue if anonymisation is off
         run: |

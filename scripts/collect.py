@@ -428,6 +428,8 @@ def main():
         "repos": out_repos,
     }
 
+    outdir = os.path.dirname(os.path.abspath(args.out))
+    os.makedirs(outdir, exist_ok=True)
     with open(args.out, "w", encoding="utf-8") as f:
         json.dump(result, f, indent=2, ensure_ascii=False)
 
