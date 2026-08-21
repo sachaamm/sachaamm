@@ -277,7 +277,7 @@ def card_repos(th):
     ]
     for px, head, items, val, fmt, metric in panels:
         o += txt(px, 92, head, 10, "tm", "600", th=th)
-        mx = max(val(r) for r in items) or 1
+        mx = max((val(r) for r in items), default=0) or 1
         LW, BW = 150, 128
         y = 106
         for r in items:
@@ -292,7 +292,7 @@ def card_repos(th):
             o += txt(px + PW, y + 12, fmt(v), 10.5, "tp", "600", "end", th)
             y += 22
     o += f'<rect x="24" y="{H-30}" width="9" height="9" rx="2" fill="{th["s1"]}"/>'
-    o += txt(38, {}, "public", 10.5, "tm", th=th).replace("{}", str(H - 22))
+    o += txt(38, H - 22, "public", 10.5, "tm", th=th)
     o += f'<rect x="90" y="{H-30}" width="9" height="9" rx="2" fill="{th["s2"]}"/>'
     o += txt(104, H - 22, "private", 10.5, "tm", th=th)
     o += txt(W - 24, H - 22,
