@@ -23,13 +23,14 @@ FIXTURE = {
          "my_commits": 487, "churn_additions": 54074266, "churn_deletions": 37184798,
          "churn": 91259064, "created_at": "2021-03-01T00:00:00Z",
          "pushed_at": "2024-07-07T00:00:00Z", "first_commit": "2021-04-01T00:00:00Z",
-         "last_commit": "2024-07-01T00:00:00Z", "languages": {"C#": 11262791},
-         "loc": {"written": {"C#": 363316}, "vendored": {}}, "markers": [],
+         "last_commit": "2024-07-01T00:00:00Z",
+         "languages": {"C#": 11262791, "ShaderLab": 402424},
+         "loc": {"written": {"C#": 1732258}, "vendored": {}}, "markers": [],
          "dependencies": [], "file_count": 20000},
         {"id": "private-007", "private": True, "primary_language": "TypeScript",
          "my_commits": 261, "created_at": "2023-01-01T00:00:00Z",
          "pushed_at": "2026-08-01T00:00:00Z", "languages": {"TypeScript": 900000},
-         "loc": {"written": {"TypeScript": 31034}, "vendored": {}}, "markers": [],
+         "loc": {"written": {"TypeScript": 537931}, "vendored": {}}, "markers": [],
          "dependencies": [], "file_count": 900},
     ],
 }
@@ -119,6 +120,16 @@ class TestOverviewCard(unittest.TestCase):
         # 171 private sans 58 public obligeait le lecteur a faire la soustraction
         self.assertIn("1 public", self.svg)
         self.assertIn("1 private", self.svg)
+
+    def test_unity_csharp_is_credited_to_graphics_not_to_backend(self):
+        # la fixture : tout le C# vit dans un depot a shaders
+        import xml.etree.ElementTree as ET
+        root = ET.fromstring(f'<svg xmlns="http://www.w3.org/2000/svg">{self.svg}</svg>')
+        legend = [el.text for el in root.iter("{http://www.w3.org/2000/svg}text")
+                  if el.get("y") == "240"]
+        pairs = dict(zip(legend[::2], legend[1::2]))
+        self.assertEqual(pairs["Graphics / Unity"], "76.3%")
+        self.assertEqual(pairs[".NET Backend"], "0.0%")
 
     def test_headline_loc_matches_the_written_total(self):
         self.assertIn("3.8M", self.svg)   # totals.loc_written = 3 760 000

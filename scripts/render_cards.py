@@ -9,6 +9,9 @@ Aucune dépendance externe. Les SVG produits ne contiennent ni script, ni police
 externe, ni animation : GitHub les affiche tels quels.
 """
 import json, os, sys
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from statslib import repo_is_unity, domain_of
 from collections import defaultdict
 
 HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -56,19 +59,18 @@ for k, v in months.items():
     yr[k[:4]] += v
 
 lb = d["language_bytes"]; ltot = sum(lb.values()) or 1
-GROUP = {"C#": "gfx_no", "ASP.NET": "net"}
-def group_of(lang):
-    if lang in ("C#", "ASP.NET"):                       return "net"
-    if lang in ("ShaderLab", "GLSL", "HLSL", "C++", "C", "Processing"): return "gfx"
-    if lang in ("TypeScript", "JavaScript", "HTML", "CSS", "SCSS"):     return "web"
-    return "other"
-# La repartition par domaine compte les lignes ecrites, pas les octets bruts :
-# sinon le code tiers deja ecarte du total des lignes revient gonfler les parts.
-loc_lang = d.get("loc_by_language") or lb
-gtot = sum(loc_lang.values()) or 1
+# Le domaine se decide depot par depot : le C# d'un projet Unity est du
+# gameplay, celui d'une API est du backend. Classer sur le seul langage
+# rangeait 87 % de ce C# en ".NET Backend", ce qui decrivait le mauvais metier.
 g = defaultdict(float)
-for k, v in loc_lang.items():
-    g[group_of(k)] += v
+for _r in R:
+    _unity = repo_is_unity(_r.get("languages"))
+    for _k, _v in ((_r.get("loc") or {}).get("written") or {}).items():
+        g[domain_of(_k, _unity)] += _v
+if not g:                       # anciens jeux de donnees, sans loc par depot
+    for _k, _v in (d.get("loc_by_language") or lb).items():
+        g[domain_of(_k)] += _v
+gtot = sum(g.values()) or 1
 
 # Lignes calculees en amont par collect.py, a partir des chemins reels de
 # chaque fichier : le code tiers et le code genere sont deja ecartes.

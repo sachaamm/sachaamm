@@ -179,3 +179,29 @@ def apply_naming(entries, named):
         e.pop("homepage", None)
         e.pop("topics", None)
     return sorted(published)
+
+
+# ---------------------------------------------------------------- domaines
+SHADER_LANGS = {"ShaderLab", "GLSL", "HLSL"}
+WEB_LANGS = {"TypeScript", "JavaScript", "HTML", "CSS", "SCSS", "Vue", "Svelte", "Astro"}
+
+
+def repo_is_unity(languages):
+    """Vrai si le depot contient des shaders : signature d'un projet de jeu."""
+    return bool(set(languages or {}) & SHADER_LANGS)
+
+
+def domain_of(lang, unity=False):
+    """Domaine d'un langage, selon le depot ou il vit.
+
+    Le C# ne dit pas a lui seul de quel metier il releve : dans un depot
+    Unity c'est du gameplay, ailleurs c'est du backend. Le reste des
+    langages ne depend pas du contexte.
+    """
+    if lang in SHADER_LANGS or lang in ("C++", "C", "Processing"):
+        return "gfx"
+    if lang in WEB_LANGS:
+        return "web"
+    if lang in ("C#", "ASP.NET"):
+        return "gfx" if unity else "net"
+    return "other"

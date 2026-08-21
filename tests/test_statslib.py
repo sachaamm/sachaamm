@@ -4,7 +4,8 @@ import os, sys, unittest
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "scripts"))
 
 from statslib import (is_vendored, lang_of_path, est_lines, loc_from_tree,
-                      repos_to_name, author_churn, apply_naming, repo_is_vendored)
+                      repos_to_name, author_churn, apply_naming, repo_is_vendored,
+                      repo_is_unity, domain_of)
 
 
 class TestIsVendored(unittest.TestCase):
@@ -52,6 +53,32 @@ class TestRepoIsVendored(unittest.TestCase):
     def test_extra_names_can_be_supplied_at_call_time(self):
         self.assertTrue(repo_is_vendored("me/asset-dump", extra={"me/asset-dump"}))
         self.assertFalse(repo_is_vendored("me/asset-dump"))
+
+
+class TestDomainClassification(unittest.TestCase):
+    """Le domaine se decide au depot, pas au langage seul.
+
+    87 % du C# de ce compte est du gameplay Unity. Le classer en backend
+    .NET sur la seule foi de l'extension .cs raconte le mauvais metier.
+    """
+
+    def test_a_repo_holding_shaders_is_a_unity_repo(self):
+        self.assertTrue(repo_is_unity({"C#": 900, "ShaderLab": 100}))
+
+    def test_a_repo_without_shaders_is_not(self):
+        self.assertFalse(repo_is_unity({"C#": 900, "SQL": 100}))
+
+    def test_csharp_in_a_unity_repo_counts_as_graphics(self):
+        self.assertEqual(domain_of("C#", unity=True), "gfx")
+
+    def test_csharp_outside_unity_stays_backend(self):
+        self.assertEqual(domain_of("C#", unity=False), "net")
+
+    def test_shaders_are_graphics_wherever_they_live(self):
+        self.assertEqual(domain_of("ShaderLab", unity=False), "gfx")
+
+    def test_web_languages_stay_web_even_inside_a_unity_repo(self):
+        self.assertEqual(domain_of("TypeScript", unity=True), "web")
 
 
 class TestLangOfPath(unittest.TestCase):
