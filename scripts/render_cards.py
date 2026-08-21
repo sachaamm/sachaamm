@@ -62,8 +62,12 @@ def group_of(lang):
     if lang in ("ShaderLab", "GLSL", "HLSL", "C++", "C", "Processing"): return "gfx"
     if lang in ("TypeScript", "JavaScript", "HTML", "CSS", "SCSS"):     return "web"
     return "other"
-g = defaultdict(int)
-for k, v in lb.items():
+# La repartition par domaine compte les lignes ecrites, pas les octets bruts :
+# sinon le code tiers deja ecarte du total des lignes revient gonfler les parts.
+loc_lang = d.get("loc_by_language") or lb
+gtot = sum(loc_lang.values()) or 1
+g = defaultdict(float)
+for k, v in loc_lang.items():
     g[group_of(k)] += v
 
 # Lignes calculees en amont par collect.py, a partir des chemins reels de
@@ -118,7 +122,7 @@ def card_overview(th):
             (str(A["years_on_github"]), "years active"),
             (f"{loc_written/1e6:.1f}M", "lines of code*"),
             (f"{T['files_indexed']//1000}k", "files indexed"),
-            (f"{ltot/1e6:.0f} MB", "of source")]
+            (f"{ltot/1e6:.0f} MB", "of source, all files")]
     x, bw = 24, 130
     for val, lab in kpis:
         o += f'<rect x="{x}" y="70" width="{bw}" height="66" rx="9" fill="{th["soft"]}"/>'
@@ -132,18 +136,18 @@ def card_overview(th):
             ("Other",            g["other"], th["gray"])]
     x, BW = 24, W - 48
     for name, v, col in segs:
-        w = BW * v / ltot
+        w = BW * v / gtot
         o += f'<rect x="{x:.1f}" y="180" width="{max(w-2,1):.1f}" height="30" rx="5" fill="{col}"/>'
         if w > 64:
             o += (f'<text x="{x+w/2-1:.1f}" y="200" font-family="{FONT}" font-size="12" '
-                  f'font-weight="650" fill="#ffffff" text-anchor="middle">{100*v/ltot:.0f}%</text>')
+                  f'font-weight="650" fill="#ffffff" text-anchor="middle">{100*v/gtot:.0f}%</text>')
         x += w
     colw = (W - 48) / 4
     for i, (name, v, col) in enumerate(segs):
         x = 24 + colw * i
         o += f'<rect x="{x:.1f}" y="231" width="10" height="10" rx="3" fill="{col}"/>'
         o += txt(x + 16, 240, name, 11.5, "ts", th=th)
-        o += txt(x + colw - 14, 240, f"{100*v/ltot:.1f}%", 11.5, "tp", "600", "end", th)
+        o += txt(x + colw - 14, 240, f"{100*v/gtot:.1f}%", 11.5, "tp", "600", "end", th)
     o += txt(24, 259, "* estimated from source bytes, third-party and generated code excluded",
              10, "tm", th=th)
     return W, H, o
@@ -286,11 +290,17 @@ def card_repos(th):
                  "end", th)
         y += 22
 
+    # Legende : seules les couleurs reellement presentes dans le tableau.
+    # Annoncer "public" quand les dix lignes sont privees serait faux.
     fy = H - 20
-    o += f'<rect x="24" y="{fy-9}" width="9" height="9" rx="2" fill="{th["s1"]}"/>'
-    o += txt(38, fy, "public", 10.5, "tm", th=th)
-    o += f'<rect x="90" y="{fy-9}" width="9" height="9" rx="2" fill="{th["s2"]}"/>'
-    o += txt(104, fy, "private", 10.5, "tm", th=th)
+    lx = 24
+    for used, colour, label in ((any(not r.get("private") for r in rows), "s1", "public"),
+                                (any(r.get("private") for r in rows),     "s2", "private")):
+        if not used:
+            continue
+        o += f'<rect x="{lx}" y="{fy-9}" width="9" height="9" rx="2" fill="{th[colour]}"/>'
+        o += txt(lx + 14, fy, label, 10.5, "tm", th=th)
+        lx += 14 + len(label) * 6 + 18
     o += txt(W - 24, fy,
              "lines from GitHub contributor stats \u2014 all files, asset imports included",
              10.5, "tm", anchor="end", th=th)

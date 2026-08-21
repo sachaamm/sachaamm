@@ -35,7 +35,7 @@ FIXTURE = {
 }
 
 
-def render():
+def load_module():
     fd, path = tempfile.mkstemp(suffix=".json")
     with os.fdopen(fd, "w", encoding="utf-8") as f:
         json.dump(FIXTURE, f)
@@ -43,9 +43,13 @@ def render():
     for m in ("render_cards",):
         sys.modules.pop(m, None)
     import render_cards
-    w, h, svg = render_cards.card_repos(render_cards.THEMES["light"])
     os.unlink(path)
-    return svg
+    return render_cards
+
+
+def render():
+    m = load_module()
+    return m.card_repos(m.THEMES["light"])[2]
 
 
 class TestReposCard(unittest.TestCase):
@@ -76,8 +80,43 @@ class TestReposCard(unittest.TestCase):
         self.assertNotIn("+0", self.svg)
         self.assertIn("—", self.svg)
 
+    def test_legend_does_not_announce_a_colour_no_row_uses(self):
+        # les deux repos de la fixture sont prives : annoncer "public" est faux
+        self.assertNotIn("public", self.svg)
+        self.assertIn("private", self.svg)
+
+    def test_no_text_escapes_the_card_frame(self):
+        import xml.etree.ElementTree as ET
+        root = ET.fromstring(self.svg if self.svg.startswith("<svg")
+                             else f'<svg xmlns="http://www.w3.org/2000/svg" width="840">{self.svg}</svg>')
+        for el in root.iter("{http://www.w3.org/2000/svg}text"):
+            x, size = float(el.get("x")), float(el.get("font-size"))
+            w = len(el.text or "") * size * 0.55
+            anchor = el.get("text-anchor", "start")
+            x0 = x - w if anchor == "end" else x
+            self.assertGreaterEqual(x0, 4, f"deborde a gauche : {el.text!r}")
+            self.assertLessEqual(x0 + w, 836, f"deborde a droite : {el.text!r}")
+
     def test_states_that_counts_include_asset_imports(self):
         self.assertIn("imports included", self.svg)
+
+
+class TestOverviewCard(unittest.TestCase):
+    """La carte overview doit compter comme le reste : lignes ecrites, pas octets bruts."""
+
+    @classmethod
+    def setUpClass(cls):
+        m = load_module()
+        cls.svg = m.card_overview(m.THEMES["light"])[2]
+
+    def test_domain_split_uses_written_lines_not_raw_bytes(self):
+        # fixture : C# vaut 77.5 % des octets mais 76.3 % des lignes ecrites.
+        # Le code tiers ne doit pas gonfler la repartition par domaine.
+        self.assertIn("76.3%", self.svg)
+        self.assertNotIn("77.5%", self.svg)
+
+    def test_headline_loc_matches_the_written_total(self):
+        self.assertIn("3.8M", self.svg)   # totals.loc_written = 3 760 000
 
 
 if __name__ == "__main__":
