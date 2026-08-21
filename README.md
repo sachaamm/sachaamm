@@ -75,7 +75,7 @@
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="assets/repos-dark.svg">
-  <img alt="Top repositories by commit count and by estimated lines of code" src="assets/repos-light.svg" width="840">
+  <img alt="Top repositories: commits authored, lines added and lines deleted per repository" src="assets/repos-light.svg" width="840">
 </picture>
 
 <picture>

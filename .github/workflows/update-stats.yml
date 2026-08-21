@@ -25,20 +25,43 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.STATS_TOKEN }}
         run: |
           mkdir -p data
-          python3 scripts/collect.py --out data/github-profile.json
+          # --name-top 10 : seuls les 10 premiers de chaque classement gardent
+          # leur vrai nom. Ce sont exactement ceux que la carte affiche.
+          python3 scripts/collect.py --name-top 10 --out data/github-profile.json
 
-      - name: Safety check — refuse to continue if anonymisation is off
+      - name: Safety check — refuse to publish a private name outside the whitelist
         run: |
           python3 - <<'PY'
           import json, sys
+          NAME_TOP = 10
           d = json.load(open('data/github-profile.json'))
-          if not d.get('anonymized'):
-              sys.exit('ABORT: data is not anonymised, private repo names would leak.')
-          leaked = [r['id'] for r in d['repos'] if r['private'] and not r['id'].startswith('private-')]
+          named = set(d.get('named_repos') or [])
+
+          if d.get('naming_mode') != 'whitelist':
+              sys.exit("ABORT: naming_mode=%r, expected 'whitelist'." % d.get('naming_mode'))
+
+          # Tout repo prive hors liste blanche doit porter un identifiant anonyme.
+          leaked = [r['id'] for r in d['repos']
+                    if r['private'] and r['id'] not in named
+                    and not r['id'].startswith('private-')]
           if leaked:
-              sys.exit(f'ABORT: {len(leaked)} private repo names present.')
-          print(f"OK — {d['totals']['repos']} repos, {d['totals']['private']} private, all anonymised.")
+              sys.exit('ABORT: %d private repo names outside the whitelist.' % len(leaked))
+
+          # La liste blanche ne doit jamais depasser ce que les cartes affichent.
+          if len(named) > 4 * NAME_TOP:
+              sys.exit('ABORT: whitelist has %d entries, far more than the cards show.'
+                       % len(named))
+
+          priv_named = [r['id'] for r in d['repos'] if r['private'] and r['id'] in named]
+          print("OK \u2014 %d repos, %d private." % (d['totals']['repos'], d['totals']['private']))
+          print("     %d real names published, of which %d private:"
+                % (len(named), len(priv_named)))
+          for n in sorted(priv_named):
+              print("       -", n)
           PY
+
+      - name: Run tests
+        run: python3 -m unittest discover -s tests -v
 
       - name: Render SVG cards
         run: python3 scripts/render_cards.py

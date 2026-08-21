@@ -24,6 +24,10 @@ import os, sys, json, time, base64, argparse, hashlib
 from collections import defaultdict
 import urllib.request, urllib.error, urllib.parse
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from statslib import (loc_from_tree, est_lines, repos_to_name,
+                      apply_naming, author_churn)
+
 API = "https://api.github.com"
 
 # ----------------------------------------------------------------------------
@@ -202,7 +206,12 @@ class GH:
 # ----------------------------------------------------------------------------
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--keep-private-names", action="store_true")
+    ap.add_argument("--keep-private-names", action="store_true",
+                    help="publie TOUS les vrais noms, y compris prives (deconseille)")
+    ap.add_argument("--name-top", type=int, default=10,
+                    help="nb de repos en tete de classement qui gardent leur vrai nom")
+    ap.add_argument("--never-name", default="",
+                    help="repos qui restent anonymes quoi qu'il arrive (separes par des virgules)")
     ap.add_argument("--max-commit-pages", type=int, default=12)
     ap.add_argument("--out", default="github-profile.json")
     args = ap.parse_args()
@@ -245,12 +254,16 @@ def main():
         if is_priv:
             priv_i += 1
 
-        label = full if (not is_priv or args.keep_private_names) else "private-%03d" % priv_i
-        sys.stdout.write("\r[%3d/%3d] %-52s" % (i, total, label[:52]))
+        # Le vrai nom est conservé dans l'entrée : l'anonymisation est appliquée
+        # à la fin, une fois le classement connu (voir apply_naming plus bas).
+        # L'affichage, lui, reste masqué : les logs Actions d'un repo public
+        # sont lisibles par tout le monde.
+        shown = full if not is_priv else "private repo #%d" % priv_i
+        sys.stdout.write("\r[%3d/%3d] %-52s" % (i, total, shown[:52]))
         sys.stdout.flush()
 
         entry = {
-            "id": label,
+            "id": full,
             "private": is_priv,
             "fork": r.get("fork", False),
             "archived": r.get("archived", False),
@@ -305,9 +318,23 @@ def main():
         tree, _ = gh.get("/repos/%s/git/trees/%s" % (full, branch), {"recursive": "1"})
         paths = []
         if tree and isinstance(tree, dict):
-            paths = [t["path"] for t in tree.get("tree", []) if t.get("type") == "blob"]
+            blobs = [t for t in tree.get("tree", []) if t.get("type") == "blob"]
+            paths = [t["path"] for t in blobs]
             entry["file_count"] = len(paths)
             entry["tree_truncated"] = tree.get("truncated", False)
+            # Lignes estimees, separees selon que le chemin est du code ecrit
+            # ou du code tiers/genere. Aucun appel API en plus : l'arbre est
+            # deja telecharge ci-dessus.
+            if entry["tree_truncated"]:
+                # Arbre tronque par GitHub (>100k entrees) : on retombe sur les
+                # octets par langage, sans pouvoir distinguer le code tiers.
+                entry["loc"] = {"written": {k: est_lines(v, k)
+                                            for k, v in (entry.get("languages") or {}).items()},
+                                "vendored": {}}
+                entry["loc_source"] = "languages (arbre tronque)"
+            else:
+                entry["loc"] = loc_from_tree(blobs)
+                entry["loc_source"] = "tree"
 
         found_markers, workflows = set(), []
         for p in paths:
@@ -379,17 +406,75 @@ def main():
 
         out_repos.append(entry)
 
-    print("\n\nAgregation...")
+    # ------------------------------------------------------------------
+    # Churn : lignes ajoutees / supprimees, par toi seul.
+    # /stats/contributors repond 202 et calcule en tache de fond la premiere
+    # fois. D'ou deux passes : la premiere declenche les calculs, la seconde
+    # les recolte une fois chauds.
+    # ------------------------------------------------------------------
+    print("\n\nChurn (lignes ajoutees/supprimees)...")
+    by_id = {e["id"]: e for e in out_repos}
+    paths_stats = {rid: "/repos/%s/stats/contributors" % rid for rid in by_id}
+    for path in paths_stats.values():
+        gh.get(path)                       # passe 1 : reveille le calcul
+
+    pending = dict(paths_stats)
+    for attempt in range(4):
+        if not pending:
+            break
+        if attempt:
+            time.sleep(15)                 # laisse GitHub finir de calculer
+        still = {}
+        for rid, path in pending.items():
+            stats, _ = gh.get(path)
+            churn = author_churn(stats, login)
+            if churn is None:
+                still[rid] = path
+            else:
+                by_id[rid]["churn_additions"] = churn["additions"]
+                by_id[rid]["churn_deletions"] = churn["deletions"]
+                by_id[rid]["churn"] = churn["additions"] + churn["deletions"]
+        pending = still
+        print("  passe %d : %d repos restants" % (attempt + 1, len(pending)))
+    if pending:
+        print("  %d repos sans statistiques (API toujours en calcul) : churn absent"
+              % len(pending))
+
+    # ------------------------------------------------------------------
+    # Nommage : seuls les repos susceptibles d'apparaitre sur une carte
+    # gardent leur vrai nom. Tous les autres sont anonymises ici, avant
+    # meme d'etre ecrits sur le disque.
+    # ------------------------------------------------------------------
+    never = {x.strip() for x in args.never_name.split(",") if x.strip()}
+    if args.keep_private_names:
+        named = {e["id"] for e in out_repos} - never
+    else:
+        named = repos_to_name(out_repos, top_n=args.name_top, never_name=never)
+    published = apply_naming(out_repos, named)
+    hidden = len(out_repos) - len(published)
+    print("\nNommage : %d noms reels publies, %d repos anonymises." % (len(published), hidden))
+
+    print("\nAgregation...")
 
     lang_totals = defaultdict(int)
     for e in out_repos:
         for k, v in (e.get("languages") or {}).items():
             lang_totals[k] += v
 
+    loc_written, loc_vendored = defaultdict(float), defaultdict(float)
+    for e in out_repos:
+        for k, v in (e.get("loc", {}).get("written") or {}).items():
+            loc_written[k] += v
+        for k, v in (e.get("loc", {}).get("vendored") or {}).items():
+            loc_vendored[k] += v
+
     result = {
-        "schema": "github-profile/1.1",
+        "schema": "github-profile/1.2",
         "generated_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
-        "anonymized": not args.keep_private_names,
+        "anonymized": hidden > 0,
+        "naming_mode": "all" if args.keep_private_names else "whitelist",
+        "name_top": args.name_top,
+        "named_repos": published,
         "account": {
             "login": login,
             "name": me.get("name"),
@@ -417,8 +502,16 @@ def main():
             "my_commits": sum(e.get("my_commits", 0) for e in out_repos),
             "stars_received": sum(e.get("stars", 0) for e in out_repos),
             "files_indexed": sum(e.get("file_count", 0) for e in out_repos),
+            "loc_written": round(sum(loc_written.values())),
+            "loc_vendored": round(sum(loc_vendored.values())),
+            "churn_additions": sum(e.get("churn_additions", 0) for e in out_repos),
+            "churn_deletions": sum(e.get("churn_deletions", 0) for e in out_repos),
             "api_calls": gh.calls,
         },
+        "loc_by_language": dict(sorted(((k, round(v)) for k, v in loc_written.items()),
+                                       key=lambda x: -x[1])),
+        "loc_vendored_by_language": dict(sorted(((k, round(v)) for k, v in loc_vendored.items()),
+                                                key=lambda x: -x[1])),
         "language_bytes": dict(sorted(lang_totals.items(), key=lambda x: -x[1])),
         "file_extensions": dict(sorted(ext_counter.items(), key=lambda x: -x[1])),
         "stack_markers": dict(sorted(marker_counter.items(), key=lambda x: -x[1])),

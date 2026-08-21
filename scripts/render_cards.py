@@ -12,7 +12,7 @@ import json, os, sys
 from collections import defaultdict
 
 HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-DATA = os.path.join(HERE, "data", "github-profile.json")
+DATA = os.environ.get("PROFILE_DATA") or os.path.join(HERE, "data", "github-profile.json")
 OUT  = os.path.join(HERE, "assets")
 
 FONT = "-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif"
@@ -43,33 +43,11 @@ def frame(w, h, th, title, subtitle=None):
 def nfmt(n):
     return f"{n:,}".replace(",", " ")   # espace fine
 
-# Octets par ligne, moyennes observées par langage. Sert à estimer les LOC
-# à partir des octets renvoyés par l'API (GitHub ne fournit pas de compte de lignes).
-BYTES_PER_LINE = {
- "C#":31,"ASP.NET":34,"TypeScript":29,"JavaScript":30,"HTML":38,"CSS":24,"SCSS":24,
- "Python":29,"Java":32,"Kotlin":30,"C++":29,"C":28,"PHP":30,"Go":28,"Rust":29,"Ruby":26,
- "Shell":26,"PowerShell":30,"ShaderLab":26,"GLSL":26,"HLSL":26,"Swift":30,"Dart":28,
- "Vue":30,"Svelte":30,"Processing":28,"EJS":34,"Astro":30,"Dockerfile":28,"Makefile":24,
-}
-BPL_DEFAULT = 30
-
-# Langages de shaders : très majoritairement générés (Shader Graph) ou importés
-# depuis l'Asset Store. Exclus du décompte de lignes écrites à la main.
-GENERATED_LANGS = {"ShaderLab", "GLSL", "HLSL"}
-
-def est_loc(langs, skip_generated=True):
-    """Lignes estimées à partir des octets par langage."""
-    t = 0.0
-    for k, v in (langs or {}).items():
-        if skip_generated and k in GENERATED_LANGS:
-            continue
-        t += v / BYTES_PER_LINE.get(k, BPL_DEFAULT)
-    return t
-
 # ---------------------------------------------------------------- chargement
 if not os.path.exists(DATA):
     sys.exit(f"Fichier introuvable : {DATA}\nLance d'abord scripts/collect.py")
-d = json.load(open(DATA, encoding="utf-8"))
+with open(DATA, encoding="utf-8") as _f:
+    d = json.load(_f)
 A, T, R = d["account"], d["totals"], d["repos"]
 
 months = d["commits_by_month"]
@@ -88,9 +66,22 @@ g = defaultdict(int)
 for k, v in lb.items():
     g[group_of(k)] += v
 
-loc_written  = est_loc(lb, skip_generated=True)
-loc_shaders  = est_loc({k: v for k, v in lb.items() if k in GENERATED_LANGS},
-                       skip_generated=False)
+# Lignes calculees en amont par collect.py, a partir des chemins reels de
+# chaque fichier : le code tiers et le code genere sont deja ecartes.
+loc_written  = T.get("loc_written", 0)
+loc_vendored = T.get("loc_vendored", 0)
+
+def mfmt(n):
+    """54074266 -> 54.1M ; 31034 -> 31k."""
+    if n >= 1e6:  return f"{n/1e6:.1f}M"
+    if n >= 1e3:  return f"{n/1e3:.0f}k"
+    return str(int(n))
+
+def period(r):
+    a = (r.get("first_commit") or r.get("created_at") or "")[:4]
+    b = (r.get("last_commit") or r.get("pushed_at") or "")[:4]
+    if not a: return "—"
+    return a if a == b else f"{a}–{b}"
 
 def dom(pred):
     rs = [r for r in R if pred(r)]
@@ -153,7 +144,7 @@ def card_overview(th):
         o += f'<rect x="{x:.1f}" y="231" width="10" height="10" rx="3" fill="{col}"/>'
         o += txt(x + 16, 240, name, 11.5, "ts", th=th)
         o += txt(x + colw - 14, 240, f"{100*v/ltot:.1f}%", 11.5, "tp", "600", "end", th)
-    o += txt(24, 259, "* lines estimated from source bytes, excluding generated shader code",
+    o += txt(24, 259, "* estimated from source bytes, third-party and generated code excluded",
              10, "tm", th=th)
     return W, H, o
 
@@ -242,74 +233,85 @@ def card_agentic(th):
 
 
 # ================================================================= carte 5
-def _label(r, metric):
-    """Libellé lisible : nom réel si public, description neutre si privé."""
-    lang = r.get("primary_language") or "mixed"
-    if not r["private"]:
-        name = r["id"].split("/")[-1]
-        return (name[:24] + "…") if len(name) > 25 else name
-    if metric == "commits":
-        a = (r.get("first_commit") or r.get("created_at", ""))[:4]
-        b = (r.get("last_commit") or r.get("pushed_at", ""))[:4]
-    else:
-        a = (r.get("created_at") or "")[:4]
-        b = (r.get("pushed_at") or "")[:4]
-    span = a[2:] if a == b else f"{a[2:]}–{b[2:]}"
-    return f"Private · {lang} · {span}"
-
-
 def card_repos(th):
-    W = 840
-    by_commits = sorted(R, key=lambda r: -r.get("my_commits", 0))[:10]
-    by_loc     = sorted(R, key=lambda r: -est_loc(r.get("languages")))[:10]
-    rows = 10
-    H = 118 + rows * 22 + 34
-    o = frame(W, H, th, "Top repositories",
-              "Private repositories are counted and described, never named")
+    """Tableau pleine largeur : une ligne par repo, une colonne par mesure.
 
-    PW, GAP = 372, 24
-    panels = [
-        (24,            "BY COMMITS",       by_commits,
-         lambda r: r.get("my_commits", 0), lambda v: nfmt(v), "commits"),
-        (24 + PW + GAP, "BY SIZE (EST. LOC)", by_loc,
-         lambda r: est_loc(r.get("languages")),
-         lambda v: f"{v/1000:.0f}k" if v >= 1000 else f"{v:.0f}", "loc"),
-    ]
-    for px, head, items, val, fmt, metric in panels:
-        o += txt(px, 92, head, 10, "tm", "600", th=th)
-        mx = max((val(r) for r in items), default=0) or 1
-        LW, BW = 150, 128
-        y = 106
-        for r in items:
-            v = val(r)
-            o += txt(px + LW - 8, y + 12, _label(r, metric), 10.5,
-                     "ts" if r["private"] else "tp",
-                     "400" if r["private"] else "600", "end", th)
-            bx = px + LW
-            o += f'<rect x="{bx}" y="{y+2}" width="{BW}" height="13" rx="3" fill="{th["soft"]}"/>'
-            o += (f'<rect x="{bx}" y="{y+2}" width="{max(BW*v/mx,3):.1f}" height="13" rx="3" '
-                  f'fill="{th["s1"] if not r["private"] else th["s2"]}"/>')
-            o += txt(px + PW, y + 12, fmt(v), 10.5, "tp", "600", "end", th)
-            y += 22
-    o += f'<rect x="24" y="{H-30}" width="9" height="9" rx="2" fill="{th["s1"]}"/>'
-    o += txt(38, H - 22, "public", 10.5, "tm", th=th)
-    o += f'<rect x="90" y="{H-30}" width="9" height="9" rx="2" fill="{th["s2"]}"/>'
-    o += txt(104, H - 22, "private", 10.5, "tm", th=th)
-    o += txt(W - 24, H - 22,
-             f"{loc_written/1e6:.1f}M lines written · {loc_shaders/1e6:.1f}M generated shader lines excluded",
+    Chaque colonne porte son titre : rien a decoder, contrairement aux deux
+    panneaux serres de la version precedente.
+    """
+    W = 840
+    rows  = sorted(R, key=lambda r: -(r.get("my_commits") or 0))[:10]
+    H = 110 + len(rows) * 22 + 42
+    o = frame(W, H, th, "Top repositories",
+              f"Commits and lines authored by @{A['login']} \u00b7 {T['repos']} repositories scanned")
+
+    # colonnes : x, titre, alignement
+    X_NAME, X_LANG, X_PERIOD = 24, 232, 316
+    X_BAR, BAR_W = 404, 118
+    X_COMMITS, X_ADD, X_DEL = 566, 692, 816
+
+    o += txt(X_NAME,    92, "REPOSITORY",    10, "tm", "600", th=th)
+    o += txt(X_LANG,    92, "LANGUAGE",      10, "tm", "600", th=th)
+    o += txt(X_PERIOD,  92, "PERIOD",        10, "tm", "600", th=th)
+    o += txt(X_COMMITS, 92, "COMMITS",       10, "tm", "600", "end", th)
+    o += txt(X_ADD,     92, "LINES ADDED",   10, "tm", "600", "end", th)
+    o += txt(X_DEL,     92, "LINES DELETED", 10, "tm", "600", "end", th)
+    o += f'<rect x="24" y="98" width="{W-48}" height="1" fill="{th["line"]}"/>'
+
+    mx = max((r.get("my_commits") or 0) for r in rows) or 1
+    y = 118
+    for r in rows:
+        priv = r.get("private")
+        name = r["id"].split("/")[-1]
+        if len(name) > 24:
+            name = name[:23] + "\u2026"
+        o += txt(X_NAME, y, name, 11.5, "ts" if priv else "tp", "500" if priv else "600", th=th)
+        o += txt(X_LANG, y, r.get("primary_language") or "mixed", 11, "tm", th=th)
+        o += txt(X_PERIOD, y, period(r), 11, "tm", th=th)
+
+        c = r.get("my_commits") or 0
+        o += f'<rect x="{X_BAR}" y="{y-10}" width="{BAR_W}" height="12" rx="3" fill="{th["soft"]}"/>'
+        o += (f'<rect x="{X_BAR}" y="{y-10}" width="{max(BAR_W*c/mx, 3):.1f}" height="12" rx="3" '
+              f'fill="{th["s2"] if priv else th["s1"]}"/>')
+        o += txt(X_COMMITS, y, nfmt(c), 11.5, "tp", "600", "end", th)
+
+        # Le churn peut manquer : l'API GitHub calcule ces statistiques en
+        # tache de fond. Un tiret est honnete, un zero serait faux.
+        add, dele = r.get("churn_additions"), r.get("churn_deletions")
+        o += txt(X_ADD, y, f"+{mfmt(add)}" if add is not None else "\u2014",
+                 11.5, "s3" if add is not None else "tm", "600" if add is not None else "400",
+                 "end", th)
+        o += txt(X_DEL, y, f"\u2212{mfmt(dele)}" if dele is not None else "\u2014",
+                 11.5, "s2" if dele is not None else "tm", "600" if dele is not None else "400",
+                 "end", th)
+        y += 22
+
+    fy = H - 20
+    o += f'<rect x="24" y="{fy-9}" width="9" height="9" rx="2" fill="{th["s1"]}"/>'
+    o += txt(38, fy, "public", 10.5, "tm", th=th)
+    o += f'<rect x="90" y="{fy-9}" width="9" height="9" rx="2" fill="{th["s2"]}"/>'
+    o += txt(104, fy, "private", 10.5, "tm", th=th)
+    o += txt(W - 24, fy,
+             "lines from GitHub contributor stats \u2014 all files, asset imports included",
              10.5, "tm", anchor="end", th=th)
     return W, H, o
+
 
 CARDS = {"overview": card_overview, "activity": card_activity,
          "stack": card_stack, "repos": card_repos, "agentic": card_agentic}
 
-os.makedirs(OUT, exist_ok=True)
-for name, fn in CARDS.items():
-    for mode, th in THEMES.items():
-        W, H, body = fn(th)
-        svg = (f'<svg xmlns="http://www.w3.org/2000/svg" width="{W}" height="{H}" '
-               f'viewBox="0 0 {W} {H}" role="img" aria-label="{esc(name)} card">{body}</svg>')
-        p = os.path.join(OUT, f"{name}-{mode}.svg")
-        open(p, "w", encoding="utf-8").write(svg)
-        print("écrit", os.path.relpath(p, HERE), f"({len(svg)} o)")
-print(f"\nOK — {len(CARDS)*2} cartes générées.")
+def main():
+    os.makedirs(OUT, exist_ok=True)
+    for name, fn in CARDS.items():
+        for mode, th in THEMES.items():
+            w, h, body = fn(th)
+            svg = (f'<svg xmlns="http://www.w3.org/2000/svg" width="{w}" height="{h}" '
+                   f'viewBox="0 0 {w} {h}" role="img" aria-label="{name} card">{body}</svg>')
+            p = os.path.join(OUT, f"{name}-{mode}.svg")
+            open(p, "w", encoding="utf-8").write(svg)
+            print("ecrit", os.path.relpath(p, HERE), f"({len(svg)} o)")
+    print(f"\nOK \u2014 {len(CARDS)*2} cartes generees.")
+
+
+if __name__ == "__main__":
+    main()
