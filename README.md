@@ -74,6 +74,11 @@
 </picture>
 
 <picture>
+  <source media="(prefers-color-scheme: dark)" srcset="assets/repos-dark.svg">
+  <img alt="Top repositories by commit count and by estimated lines of code" src="assets/repos-light.svg" width="840">
+</picture>
+
+<picture>
   <source media="(prefers-color-scheme: dark)" srcset="assets/agentic-dark.svg">
   <img alt="AI and agentic tooling: CLAUDE.md, AGENTS.md and .mcp.json committed across repositories" src="assets/agentic-light.svg" width="840">
 </picture>

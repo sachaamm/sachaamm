@@ -66,6 +66,30 @@ The workflow runs a **safety check** between collection and rendering that abort
 whole run if anonymisation is off or if any real private repo name is present. The raw
 JSON is gitignored anyway — only the SVGs are committed.
 
+## How lines of code are counted
+
+The GitHub API returns **bytes per language**, not line counts. Fetching every file to
+count lines would mean hundreds of thousands of extra requests, so lines are estimated:
+
+```
+lines ≈ bytes / average_bytes_per_line[language]
+```
+
+The per-language divisors live in `BYTES_PER_LINE` in `render_cards.py` (C# 31, TypeScript
+29, HTML 38, and so on).
+
+**Generated shader code is excluded.** `ShaderLab`, `GLSL` and `HLSL` are listed in
+`GENERATED_LANGS` and left out of the line count. The reason is concrete: two Unity
+repositories hold 65 MB of shader source between them — one of them 43 MB across 22,614
+files for just 22 commits. That is Shader Graph output and imported Asset Store content,
+not hand-written code. Including it would inflate the total from 3.0M to 5.7M lines and
+make the whole figure worthless.
+
+The excluded volume is still reported, in the footer of the *Top repositories* card, so
+nothing is hidden.
+
+To count everything instead, empty the `GENERATED_LANGS` set.
+
 ## Customising
 
 - **Cadence** — the `cron` line in `update-stats.yml` (currently Mondays 04:17 UTC).

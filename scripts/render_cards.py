@@ -43,6 +43,29 @@ def frame(w, h, th, title, subtitle=None):
 def nfmt(n):
     return f"{n:,}".replace(",", " ")   # espace fine
 
+# Octets par ligne, moyennes observées par langage. Sert à estimer les LOC
+# à partir des octets renvoyés par l'API (GitHub ne fournit pas de compte de lignes).
+BYTES_PER_LINE = {
+ "C#":31,"ASP.NET":34,"TypeScript":29,"JavaScript":30,"HTML":38,"CSS":24,"SCSS":24,
+ "Python":29,"Java":32,"Kotlin":30,"C++":29,"C":28,"PHP":30,"Go":28,"Rust":29,"Ruby":26,
+ "Shell":26,"PowerShell":30,"ShaderLab":26,"GLSL":26,"HLSL":26,"Swift":30,"Dart":28,
+ "Vue":30,"Svelte":30,"Processing":28,"EJS":34,"Astro":30,"Dockerfile":28,"Makefile":24,
+}
+BPL_DEFAULT = 30
+
+# Langages de shaders : très majoritairement générés (Shader Graph) ou importés
+# depuis l'Asset Store. Exclus du décompte de lignes écrites à la main.
+GENERATED_LANGS = {"ShaderLab", "GLSL", "HLSL"}
+
+def est_loc(langs, skip_generated=True):
+    """Lignes estimées à partir des octets par langage."""
+    t = 0.0
+    for k, v in (langs or {}).items():
+        if skip_generated and k in GENERATED_LANGS:
+            continue
+        t += v / BYTES_PER_LINE.get(k, BPL_DEFAULT)
+    return t
+
 # ---------------------------------------------------------------- chargement
 if not os.path.exists(DATA):
     sys.exit(f"Fichier introuvable : {DATA}\nLance d'abord scripts/collect.py")
@@ -64,6 +87,10 @@ def group_of(lang):
 g = defaultdict(int)
 for k, v in lb.items():
     g[group_of(k)] += v
+
+loc_written  = est_loc(lb, skip_generated=True)
+loc_shaders  = est_loc({k: v for k, v in lb.items() if k in GENERATED_LANGS},
+                       skip_generated=False)
 
 def dom(pred):
     rs = [r for r in R if pred(r)]
@@ -92,20 +119,21 @@ for r in airepos:
 
 # ================================================================= carte 1
 def card_overview(th):
-    W, H = 840, 268
+    W, H = 840, 286
     o = frame(W, H, th, "GitHub at a glance",
               f"{T['repos']} repositories · {T['private']} private · {A['years_on_github']} years of history")
     kpis = [(nfmt(T["repos"]), "repositories"),
             (nfmt(T["my_commits"]), "commits authored"),
             (str(A["years_on_github"]), "years active"),
+            (f"{loc_written/1e6:.1f}M", "lines of code*"),
             (f"{T['files_indexed']//1000}k", "files indexed"),
-            (f"{ltot/1e6:.0f} MB", "of source code")]
-    x, bw = 24, 158
+            (f"{ltot/1e6:.0f} MB", "of source")]
+    x, bw = 24, 130
     for val, lab in kpis:
         o += f'<rect x="{x}" y="70" width="{bw}" height="66" rx="9" fill="{th["soft"]}"/>'
         o += txt(x + 14, 102, val, 21, "tp", "650", th=th)
         o += txt(x + 14, 121, lab, 11, "ts", th=th)
-        x += bw + 5
+        x += bw + 3
     o += txt(24, 168, "CODE DISTRIBUTION BY DOMAIN", 10, "tm", "600", th=th)
     segs = [("Graphics / Unity", g["gfx"], th["s3"]),
             (".NET Backend",     g["net"], th["s1"]),
@@ -125,6 +153,8 @@ def card_overview(th):
         o += f'<rect x="{x:.1f}" y="231" width="10" height="10" rx="3" fill="{col}"/>'
         o += txt(x + 16, 240, name, 11.5, "ts", th=th)
         o += txt(x + colw - 14, 240, f"{100*v/ltot:.1f}%", 11.5, "tp", "600", "end", th)
+    o += txt(24, 259, "* lines estimated from source bytes, excluding generated shader code",
+             10, "tm", th=th)
     return W, H, o
 
 
@@ -210,8 +240,68 @@ def card_agentic(th):
     return W, H, o
 
 
+
+# ================================================================= carte 5
+def _label(r, metric):
+    """Libellé lisible : nom réel si public, description neutre si privé."""
+    lang = r.get("primary_language") or "mixed"
+    if not r["private"]:
+        name = r["id"].split("/")[-1]
+        return (name[:24] + "…") if len(name) > 25 else name
+    if metric == "commits":
+        a = (r.get("first_commit") or r.get("created_at", ""))[:4]
+        b = (r.get("last_commit") or r.get("pushed_at", ""))[:4]
+    else:
+        a = (r.get("created_at") or "")[:4]
+        b = (r.get("pushed_at") or "")[:4]
+    span = a[2:] if a == b else f"{a[2:]}–{b[2:]}"
+    return f"Private · {lang} · {span}"
+
+
+def card_repos(th):
+    W = 840
+    by_commits = sorted(R, key=lambda r: -r.get("my_commits", 0))[:10]
+    by_loc     = sorted(R, key=lambda r: -est_loc(r.get("languages")))[:10]
+    rows = 10
+    H = 118 + rows * 22 + 34
+    o = frame(W, H, th, "Top repositories",
+              "Private repositories are counted and described, never named")
+
+    PW, GAP = 372, 24
+    panels = [
+        (24,            "BY COMMITS",       by_commits,
+         lambda r: r.get("my_commits", 0), lambda v: nfmt(v), "commits"),
+        (24 + PW + GAP, "BY SIZE (EST. LOC)", by_loc,
+         lambda r: est_loc(r.get("languages")),
+         lambda v: f"{v/1000:.0f}k" if v >= 1000 else f"{v:.0f}", "loc"),
+    ]
+    for px, head, items, val, fmt, metric in panels:
+        o += txt(px, 92, head, 10, "tm", "600", th=th)
+        mx = max(val(r) for r in items) or 1
+        LW, BW = 150, 128
+        y = 106
+        for r in items:
+            v = val(r)
+            o += txt(px + LW - 8, y + 12, _label(r, metric), 10.5,
+                     "ts" if r["private"] else "tp",
+                     "400" if r["private"] else "600", "end", th)
+            bx = px + LW
+            o += f'<rect x="{bx}" y="{y+2}" width="{BW}" height="13" rx="3" fill="{th["soft"]}"/>'
+            o += (f'<rect x="{bx}" y="{y+2}" width="{max(BW*v/mx,3):.1f}" height="13" rx="3" '
+                  f'fill="{th["s1"] if not r["private"] else th["s2"]}"/>')
+            o += txt(px + PW, y + 12, fmt(v), 10.5, "tp", "600", "end", th)
+            y += 22
+    o += f'<rect x="24" y="{H-30}" width="9" height="9" rx="2" fill="{th["s1"]}"/>'
+    o += txt(38, {}, "public", 10.5, "tm", th=th).replace("{}", str(H - 22))
+    o += f'<rect x="90" y="{H-30}" width="9" height="9" rx="2" fill="{th["s2"]}"/>'
+    o += txt(104, H - 22, "private", 10.5, "tm", th=th)
+    o += txt(W - 24, H - 22,
+             f"{loc_written/1e6:.1f}M lines written · {loc_shaders/1e6:.1f}M generated shader lines excluded",
+             10.5, "tm", anchor="end", th=th)
+    return W, H, o
+
 CARDS = {"overview": card_overview, "activity": card_activity,
-         "stack": card_stack, "agentic": card_agentic}
+         "stack": card_stack, "repos": card_repos, "agentic": card_agentic}
 
 os.makedirs(OUT, exist_ok=True)
 for name, fn in CARDS.items():
@@ -222,4 +312,4 @@ for name, fn in CARDS.items():
         p = os.path.join(OUT, f"{name}-{mode}.svg")
         open(p, "w", encoding="utf-8").write(svg)
         print("écrit", os.path.relpath(p, HERE), f"({len(svg)} o)")
-print("\nOK — 8 cartes générées.")
+print(f"\nOK — {len(CARDS)*2} cartes générées.")
