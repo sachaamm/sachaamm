@@ -26,7 +26,7 @@ import urllib.request, urllib.error, urllib.parse
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from statslib import (loc_from_tree, est_lines, repos_to_name,
-                      apply_naming, author_churn)
+                      apply_naming, author_churn, repo_is_vendored)
 
 API = "https://api.github.com"
 
@@ -212,6 +212,8 @@ def main():
                     help="nb de repos en tete de classement qui gardent leur vrai nom")
     ap.add_argument("--never-name", default="",
                     help="repos qui restent anonymes quoi qu'il arrive (separes par des virgules)")
+    ap.add_argument("--vendored-repos", default="",
+                    help="depots entierement tiers, exclus en bloc du compte de lignes")
     ap.add_argument("--max-commit-pages", type=int, default=12)
     ap.add_argument("--out", default="github-profile.json")
     args = ap.parse_args()
@@ -237,6 +239,8 @@ def main():
 
     orgs = gh.paginate("/user/orgs")
     print("  -> %d organisations" % len(orgs))
+
+    vendored_extra = {x.strip() for x in args.vendored_repos.split(",") if x.strip()}
 
     out_repos = []
     monthly = defaultdict(int)
@@ -332,6 +336,16 @@ def main():
                                             for k, v in (entry.get("languages") or {}).items()},
                                 "vendored": {}}
                 entry["loc_source"] = "languages (arbre tronque)"
+            elif repo_is_vendored(full, extra=vendored_extra):
+                # Depot entierement tiers : tout bascule du cote exclu, quels
+                # que soient les chemins internes.
+                split = loc_from_tree(blobs)
+                merged = defaultdict(float)
+                for bucket in ("written", "vendored"):
+                    for k, v in split[bucket].items():
+                        merged[k] += v
+                entry["loc"] = {"written": {}, "vendored": dict(merged)}
+                entry["loc_source"] = "tree (depot tiers, exclu en bloc)"
             else:
                 entry["loc"] = loc_from_tree(blobs)
                 entry["loc_source"] = "tree"

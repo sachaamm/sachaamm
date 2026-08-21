@@ -4,7 +4,7 @@ import os, sys, unittest
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "scripts"))
 
 from statslib import (is_vendored, lang_of_path, est_lines, loc_from_tree,
-                      repos_to_name, author_churn, apply_naming)
+                      repos_to_name, author_churn, apply_naming, repo_is_vendored)
 
 
 class TestIsVendored(unittest.TestCase):
@@ -30,6 +30,28 @@ class TestIsVendored(unittest.TestCase):
         # 'vendor' est un dossier tiers, 'vendorize.js' est du code écrit à la main
         self.assertFalse(is_vendored("src/vendorize.js"))
         self.assertTrue(is_vendored("src/vendor/jquery.js"))
+
+
+class TestRepoIsVendored(unittest.TestCase):
+    """Certains depots sont des dumps d'assets achetes, entierement tiers.
+
+    La regle par chemin ne peut rien pour eux : leurs dossiers portent des noms
+    d'editeurs Asset Store ('NatureManufacture Assets', 'Hovl Studio'), une
+    liste sans fin. C'est le depot entier qui doit sortir du compte.
+    """
+
+    def test_declared_vendored_repo_is_excluded_whole(self):
+        self.assertTrue(repo_is_vendored("sachaamm/rastignac-vendor-versionned"))
+
+    def test_ordinary_repo_is_not(self):
+        self.assertFalse(repo_is_vendored("sachaamm/generativeroads"))
+
+    def test_matches_on_the_bare_name_too(self):
+        self.assertTrue(repo_is_vendored("rastignac-vendor-versionned"))
+
+    def test_extra_names_can_be_supplied_at_call_time(self):
+        self.assertTrue(repo_is_vendored("me/asset-dump", extra={"me/asset-dump"}))
+        self.assertFalse(repo_is_vendored("me/asset-dump"))
 
 
 class TestLangOfPath(unittest.TestCase):

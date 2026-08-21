@@ -28,6 +28,28 @@ VENDORED_DIR_PREFIXES = (
 VENDORED_FILE_PREFIXES = ("ase_",)
 
 
+# Depots entierement tiers : des dumps d'assets achetes, versionnes tels quels.
+# La regle par chemin ne peut rien pour eux, leurs dossiers portant des noms
+# d'editeurs Asset Store ('NatureManufacture Assets', 'Hovl Studio', 'KriptoFX')
+# dont la liste est sans fin. Mesure : rastignac-vendor-versionned contient
+# 44.8 MB de source repartis en 348 fichiers pour 22 commits, soit ~78 000
+# lignes par commit. Personne n'ecrit ca.
+VENDORED_REPOS = {
+    "rastignac-vendor-versionned",
+}
+
+
+def repo_is_vendored(repo_id, extra=()):
+    """Vrai si le depot entier est du code tiers, a exclure en bloc.
+
+    Accepte `owner/nom` comme `nom`. `extra` permet d'en ajouter au moment de
+    l'appel, sans toucher au code (option --vendored-repos de collect.py).
+    """
+    names = {n.lower() for n in VENDORED_REPOS} | {n.lower() for n in extra}
+    rid = repo_id.lower()
+    return rid in names or rid.rsplit("/", 1)[-1] in names
+
+
 def is_vendored(path):
     """Vrai si le chemin désigne du code tiers, importé ou généré par un outil."""
     segs = path.lower().split("/")
