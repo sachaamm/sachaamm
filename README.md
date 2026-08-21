@@ -56,11 +56,13 @@
 ### 📊 GitHub Stats
 
 > Regenerated weekly from the GitHub API across **all 229 repositories — private ones included**.
-> Private repos are counted in every figure but never named. See [SETUP.md](SETUP.md) for how it works.
+> Private repos are counted in every figure. Ten of them are named — exactly those
+> listed in the *Top repositories* table. The other 161 become `private-042` in the raw
+> data itself, before anything is written to disk. See [SETUP.md](SETUP.md) for how it works.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="assets/overview-dark.svg">
-  <img alt="GitHub at a glance: 229 repositories, 8,200 commits, 11.4 years active" src="assets/overview-light.svg" width="840">
+  <img alt="GitHub at a glance: 229 repositories, 58 public and 171 private, 8,235 commits, 11.4 years active" src="assets/overview-light.svg" width="840">
 </picture>
 
 <picture>

@@ -106,16 +106,13 @@ def loc_from_tree(blobs):
 def repos_to_name(repos, top_n=10, never_name=()):
     """Repos autorisés à porter leur vrai nom.
 
-    Seuls ceux qui peuvent réellement apparaître sur une carte : les `top_n`
-    premiers par commits et les `top_n` premiers par churn. Tous les autres
-    restent anonymes, y compris dans le JSON intermédiaire. `never_name` a
-    toujours le dernier mot.
+    Exactement ceux que la carte affiche : les `top_n` premiers par commits,
+    puisque c'est son ordre de tri. Nommer un repo que personne ne verra
+    exposerait un nom sans rien apporter. Tous les autres restent anonymes,
+    y compris dans le JSON intermédiaire. `never_name` a le dernier mot.
     """
-    named = set()
-    for key in (lambda r: r.get("my_commits") or 0, lambda r: r.get("churn") or 0):
-        for r in sorted(repos, key=key, reverse=True)[:top_n]:
-            named.add(r["id"])
-    return named - set(never_name)
+    ranked = sorted(repos, key=lambda r: r.get("my_commits") or 0, reverse=True)
+    return {r["id"] for r in ranked[:top_n]} - set(never_name)
 
 
 # ---------------------------------------------------------------- churn

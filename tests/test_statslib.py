@@ -89,10 +89,14 @@ class TestReposToName(unittest.TestCase):
         self.assertIn("me/alpha", named)
         self.assertIn("me/beta", named)
 
-    def test_also_keeps_top_n_by_churn(self):
-        # gamma est 3e en commits mais 1er en churn : il apparaîtra sur la carte
+    def test_high_churn_does_not_buy_a_name_if_the_card_never_shows_it(self):
+        # gamma est 1er en churn mais 3e en commits, et la carte trie par
+        # commits : le nommer exposerait un nom que personne ne verra jamais.
         named = repos_to_name(self.repos, top_n=2)
-        self.assertIn("me/gamma", named)
+        self.assertNotIn("me/gamma", named)
+
+    def test_names_exactly_as_many_repos_as_the_card_displays(self):
+        self.assertEqual(len(repos_to_name(self.repos, top_n=2)), 2)
 
     def test_leaves_everything_else_anonymous(self):
         named = repos_to_name(self.repos, top_n=2)

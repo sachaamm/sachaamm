@@ -116,7 +116,8 @@ for r in airepos:
 def card_overview(th):
     W, H = 840, 286
     o = frame(W, H, th, "GitHub at a glance",
-              f"{T['repos']} repositories · {T['private']} private · {A['years_on_github']} years of history")
+              f"{T['repos']} repositories · {T['public']} public · {T['private']} private"
+              f" · {A['years_on_github']} years of history")
     kpis = [(nfmt(T["repos"]), "repositories"),
             (nfmt(T["my_commits"]), "commits authored"),
             (str(A["years_on_github"]), "years active"),

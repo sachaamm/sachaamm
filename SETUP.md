@@ -56,8 +56,9 @@ python3 scripts/render_cards.py
 
 ## Privacy
 
-Repository names follow a **whitelist**. A repo keeps its real name only if it can
-actually appear on a card — the top 10 by commits and the top 10 by churn. Everything
+Repository names follow a **whitelist**. A repo keeps its real name only if a card
+actually shows it — the top 10 by commits, which is exactly how the *Top repositories*
+table sorts. Naming a repo nobody will see would expose a name for nothing. Everything
 else is anonymised before a single byte reaches the disk:
 
 - names become `private-001`, `private-002`, …
@@ -70,7 +71,8 @@ public repository are readable by anyone.
 
 Two levers, both in `update-stats.yml`:
 
-- `--name-top N` — how many repos per ranking keep their real name (default 10)
+- `--name-top N` — how many repos keep their real name, matching the rows the card
+  displays (default 10)
 - `--never-name a,b` — repos that stay anonymous whatever their rank
 
 The workflow runs a **safety check** between collection and rendering. It aborts if the

@@ -115,6 +115,11 @@ class TestOverviewCard(unittest.TestCase):
         self.assertIn("76.3%", self.svg)
         self.assertNotIn("77.5%", self.svg)
 
+    def test_states_both_the_public_and_the_private_count(self):
+        # 171 private sans 58 public obligeait le lecteur a faire la soustraction
+        self.assertIn("1 public", self.svg)
+        self.assertIn("1 private", self.svg)
+
     def test_headline_loc_matches_the_written_total(self):
         self.assertIn("3.8M", self.svg)   # totals.loc_written = 3 760 000
 
