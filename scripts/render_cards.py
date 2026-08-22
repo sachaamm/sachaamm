@@ -337,14 +337,20 @@ def card_claude(th):
     machine qui a servi. Le sous-titre le dit, plutot que de laisser croire a
     un total.
     """
-    W, H = 840, 308
+    # Un poste par ligne quand il y en a plusieurs : le total en tete ne dit
+    # pas lequel travaille, et c'est une information a part entiere.
+    machines = cc.get("machines") or []
+    MACH_H = 22 + len(machines) * 20 + 26 if machines else 0
+    W, H = 840, 308 + MACH_H
     t = cc["totals"]
     per = cc.get("period") or {}
     span = ("%s \u2192 %s" % (per.get("first"), per.get("last"))
             if per.get("first") else "period unknown")
+    where = (" + ".join(m["name"] for m in machines) if machines
+             else "%s only" % cc.get("machine", "one machine"))
     o = frame(W, H, th, "Claude Code usage",
-              "%s only \u00b7 %s \u00b7 snapshot of %s, not auto-refreshed"
-              % (cc.get("machine", "one machine"), span, cc["generated_at"][:10]))
+              "%s \u00b7 %s \u00b7 snapshot of %s, not auto-refreshed"
+              % (where, span, cc["generated_at"][:10]))
 
     kpis = [(nfmt(t["sessions"]),  "sessions"),
             (nfmt(t["agents"]),    "subagents spawned"),
@@ -361,41 +367,73 @@ def card_claude(th):
     o += txt(24, 158, "PROMPTS PER MONTH", 10, "tm", "600", th=th)
     months = list((cc.get("prompts_by_month") or {}).items())[-12:]
     mx = max([v for _, v in months] or [1]) or 1
+    step = min(66, (W - 48) // max(len(months), 1))
+    bw = step - 14
     x, base, hmax = 24, 212, 34
-    for key, v in months:
+    for i, (key, v) in enumerate(months):
         h = (v / mx) * hmax
-        o += (f'<rect x="{x}" y="{base-h:.1f}" width="42" height="{max(h,2):.1f}" rx="3" '
+        o += (f'<rect x="{x}" y="{base-h:.1f}" width="{bw}" height="{max(h,2):.1f}" rx="3" '
               f'fill="{th["s1"]}"/>')
-        o += txt(x + 21, base - h - 6, nfmt(v), 10.5, "tp", "650", "middle", th)
-        o += txt(x + 21, base + 15, month_label(key), 10.5, "tm", anchor="middle", th=th)
-        x += 56
+        o += txt(x + bw / 2, base - h - 6, nfmt(v), 10, "tp", "650", "middle", th)
+        # L'annee n'apparait qu'au premier mois et a chaque janvier : repetee
+        # partout elle noierait la lecture, absente elle rendrait "Jan"
+        # ambigu sur une periode a cheval sur deux annees.
+        lab = month_label(key)
+        if i == 0 or key.endswith("-01"):
+            lab += " " + key[2:4]
+        o += txt(x + bw / 2, base + 15, lab, 10, "tm", anchor="middle", th=th)
+        x += step
+
+    # --- ce que chaque poste apporte au total
+    y = 256
+    if machines:
+        o += txt(24, y, "BY MACHINE", 10, "tm", "600", th=th)
+        for lab, cx in (("SESSIONS", 596), ("SUBAGENTS", 706), ("PROMPTS", 816)):
+            o += txt(cx, y, lab, 10, "tm", "600", "end", th)
+        o += f'<rect x="24" y="{y+6}" width="{W-48}" height="1" fill="{th["line"]}"/>'
+        y += 26
+        smax = max([(m.get("totals") or {}).get("sessions") or 0
+                    for m in machines] or [1]) or 1
+        for m in machines:
+            mt = m.get("totals") or {}
+            sess = mt.get("sessions") or 0
+            o += f'<rect x="196" y="{y-10}" width="320" height="12" rx="3" fill="{th["soft"]}"/>'
+            o += (f'<rect x="196" y="{y-10}" width="{max(320*sess/smax, 3):.1f}" '
+                  f'height="12" rx="3" fill="{th["s1"]}"/>')
+            o += txt(24, y, m["name"], 11.5, "tp", "600", th=th)
+            o += txt(596, y, nfmt(sess), 11.5, "tp", "600", "end", th)
+            o += txt(706, y, nfmt(mt.get("agents") or 0), 11.5, "ts", anchor="end", th=th)
+            o += txt(816, y, nfmt(mt.get("prompts") or 0), 11.5, "ts", anchor="end", th=th)
+            y += 20
+        y += 6
 
     # --- repartition des agents par modele, en une barre empilee
-    o += txt(24, 256, "SUBAGENTS BY MODEL", 10, "tm", "600", th=th)
+    o += txt(24, y, "SUBAGENTS BY MODEL", 10, "tm", "600", th=th)
     models = list((cc.get("agents_by_model") or {}).items())
     total = sum(v for _, v in models) or 1
     colours = {"opus": "s2", "sonnet": "s1", "haiku": "s3"}
+    bar_y, leg_y = y + 10, y + 41
     x, bar_w = 24, W - 48
     for name, v in models:
         w = bar_w * v / total
-        o += (f'<rect x="{x:.1f}" y="266" width="{max(w,1):.1f}" height="12" '
+        o += (f'<rect x="{x:.1f}" y="{bar_y}" width="{max(w,1):.1f}" height="12" '
               f'fill="{th[colours.get(name, "gray")]}"/>')
         x += w
     lx = 24
     for name, v in models:
-        o += (f'<rect x="{lx}" y="289" width="9" height="9" rx="2" '
+        o += (f'<rect x="{lx}" y="{leg_y-8}" width="9" height="9" rx="2" '
               f'fill="{th[colours.get(name, "gray")]}"/>')
         lab = "%s %s" % (name, nfmt(v))
-        o += txt(lx + 14, 297, lab, 10.5, "tm", th=th)
+        o += txt(lx + 14, leg_y, lab, 10.5, "tm", th=th)
         lx += 14 + len(lab) * 6 + 18
 
     # Les deux chiffres divergent parce que Claude Code elague ses transcripts.
     # Annoncer le plus flatteur sans dire lequel serait trompeur.
-    o += txt(W - 24, 297,
+    o += txt(W - 24, leg_y,
              "%s transcripts still on disk \u2014 older sessions counted from local history"
              % nfmt(t["transcripts_on_disk"]),
              10.5, "tm", anchor="end", th=th)
-    return W, H, o
+    return W, leg_y + 19, o
 
 
 CARDS = {"overview": card_overview, "activity": card_activity,

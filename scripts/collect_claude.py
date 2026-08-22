@@ -106,6 +106,144 @@ def read_agents(root):
     return per_project, by_model, by_type, nested
 
 
+def stamp():
+    return datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+def write_snapshot(path, machines, anonymized=None):
+    """Ecrit l'instantane : le detail par poste, plus le total en tete.
+
+    Le total reste au premier niveau, a la place exacte qu'il occupait du
+    temps ou il n'y avait qu'un poste : les cartes deja ecrites continuent de
+    le lire sans rien savoir des machines.
+    """
+    if anonymized is None:                 # --add-machine ne juge pas de ca
+        anonymized = True
+        if os.path.exists(path):
+            with open(path, encoding="utf-8") as f:
+                anonymized = json.load(f).get("anonymized", True)
+
+    out = {
+        "schema": "claude-code-usage/2.0",
+        "generated_at": stamp(),
+        "scope": "%d machine(s) — Claude Code stores nothing centrally"
+                 % len(machines),
+        "anonymized": anonymized,
+        "machines": machines,
+    }
+    out.update(aggregate(machines))
+
+    dest = path if os.path.isabs(path) else os.path.join(os.getcwd(), path)
+    os.makedirs(os.path.dirname(dest) or ".", exist_ok=True)
+    with open(dest, "w", encoding="utf-8") as f:
+        json.dump(out, f, indent=1, ensure_ascii=False)
+
+    t = out["totals"]
+    print("ecrit %s" % path)
+    for m in machines:
+        mt = m.get("totals") or {}
+        print("  %-16s %4d sessions, %4d agents, %5d prompts%s"
+              % (m["name"], mt.get("sessions", 0), mt.get("agents", 0),
+                 mt.get("prompts", 0),
+                 "" if m.get("source") == "collector" else "   (releve a la main)"))
+    print("  %-16s %4d sessions, %4d agents, %5d prompts"
+          % ("TOTAL", t.get("sessions", 0), t.get("agents", 0), t.get("prompts", 0)))
+    print("  periode %s -> %s" % (out["period"]["first"], out["period"]["last"]))
+    return out
+
+
+def merge_month_counters(machines):
+    out = Counter()
+    for m in machines:
+        out.update(m.get("prompts_by_month") or {})
+    return dict(sorted(out.items()))
+
+
+def aggregate(machines):
+    """Additionne les postes en un total lisible d'un coup d'oeil.
+
+    Chaque poste garde son detail : le total ne remplace pas les lignes, il
+    les resume. Un poste qui n'a pas su remplir un champ (la tour, relevee a
+    la main, ne connait pas la repartition par modele) ne fait pas mentir la
+    somme : elle porte alors sur les seuls postes qui l'ont renseigne.
+    """
+    totals = Counter()
+    for m in machines:
+        totals.update(m.get("totals") or {})
+
+    firsts = [m["period"]["first"] for m in machines if (m.get("period") or {}).get("first")]
+    lasts = [m["period"]["last"] for m in machines if (m.get("period") or {}).get("last")]
+
+    by_model, by_type, nested, reported = Counter(), Counter(), 0, 0
+    for m in machines:
+        if m.get("agents_by_model") is None:
+            continue
+        reported += 1
+        by_model.update(m.get("agents_by_model") or {})
+        by_type.update(m.get("agents_by_type") or {})
+        nested += m.get("agents_nested") or 0
+
+    return {
+        "period": {"first": min(firsts) if firsts else None,
+                   "last": max(lasts) if lasts else None},
+        "totals": dict(totals),
+        "prompts_by_month": merge_month_counters(machines),
+        "agents_by_model": dict(by_model.most_common()),
+        "agents_by_type": dict(by_type.most_common()),
+        "agents_nested": nested,
+        # Combien de postes ont su detailler leurs agents : la carte le dit
+        # plutot que de laisser croire que la barre couvre tout le monde.
+        "model_split_machines": reported,
+    }
+
+
+def load_existing(path):
+    """Relit l'instantane, en acceptant l'ancienne forme a un seul poste."""
+    if not os.path.exists(path):
+        return []
+    with open(path, encoding="utf-8") as f:
+        d = json.load(f)
+    if d.get("machines"):
+        return d["machines"]
+    if not d.get("totals"):
+        return []
+    return [{k: v for k, v in (
+        ("name", d.get("machine", "unknown")),
+        ("collected_at", d.get("generated_at")),
+        ("source", "collector"),
+        ("period", d.get("period")),
+        ("totals", d.get("totals")),
+        ("prompts_by_month", d.get("prompts_by_month")),
+        ("agents_by_model", d.get("agents_by_model")),
+        ("agents_by_type", d.get("agents_by_type")),
+        ("agents_nested", d.get("agents_nested")),
+        ("projects", d.get("projects")),
+    ) if v is not None}]
+
+
+def upsert(machines, entry):
+    """Remplace le poste du meme nom, sinon l'ajoute. Recollecter est idempotent."""
+    out = [m for m in machines if m.get("name") != entry["name"]]
+    out.append(entry)
+    out.sort(key=lambda m: -((m.get("totals") or {}).get("sessions") or 0))
+    return out
+
+
+def parse_months(text):
+    """'2026-03:10,2026-04:50' -> {'2026-03': 10, '2026-04': 50}."""
+    out = {}
+    for chunk in text.split(","):
+        chunk = chunk.strip()
+        if not chunk:
+            continue
+        key, _, value = chunk.partition(":")
+        key = key.strip()
+        if not re.match(r"^\d{4}-\d{2}$", key) or not value.strip().isdigit():
+            raise SystemExit("mois illisible : %r (attendu AAAA-MM:nombre)" % chunk)
+        out[key] = int(value)
+    return dict(sorted(out.items()))
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--machine", default="one workstation",
@@ -115,7 +253,41 @@ def main():
     ap.add_argument("--keep-project-names", action="store_true",
                     help="garde les vrais noms de projet (deconseille : noms de clients)")
     ap.add_argument("--out", default="data/claude-code.json")
+
+    # Relever un poste ou le depot n'est pas clone : on y lance la commande
+    # courte, on recopie ses chiffres ici. Ce poste rejoint l'instantane sans
+    # que son ~/.claude soit lisible depuis cette machine.
+    ap.add_argument("--add-machine", metavar="NOM",
+                    help="ajoute un poste a partir de chiffres releves ailleurs")
+    ap.add_argument("--sessions", type=int, default=0)
+    ap.add_argument("--transcripts", type=int, default=0)
+    ap.add_argument("--agents", type=int, default=0)
+    ap.add_argument("--prompts", type=int, default=0)
+    ap.add_argument("--projects", type=int, default=0)
+    ap.add_argument("--months", default="",
+                    help="prompts par mois : '2026-03:10,2026-04:50'")
     args = ap.parse_args()
+
+    if args.add_machine:
+        months = parse_months(args.months)
+        entry = {
+            "name": args.add_machine,
+            "collected_at": stamp(),
+            # Releve a la main : la commande courte ne donne pas la
+            # repartition par modele. Ne pas inventer le champ le dit mieux
+            # qu'un zero, et l'agregation sait l'ignorer.
+            "source": "reported",
+            "period": {"first": min(months) if months else None,
+                       "last": max(months) if months else None},
+            "totals": {"sessions": args.sessions,
+                       "transcripts_on_disk": args.transcripts,
+                       "agents": args.agents,
+                       "prompts": args.prompts,
+                       "projects": args.projects},
+            "prompts_by_month": months,
+        }
+        write_snapshot(args.out, upsert(load_existing(args.out), entry))
+        return
 
     root = args.claude_home
     if not os.path.isdir(root):
@@ -140,13 +312,10 @@ def main():
         if not args.keep_project_names:
             r["key"] = "project-%02d" % i
 
-    out = {
-        "schema": "claude-code-usage/1.0",
-        "generated_at": datetime.datetime.now(datetime.timezone.utc)
-                                .strftime("%Y-%m-%dT%H:%M:%SZ"),
-        "machine": args.machine,
-        "scope": "single machine — Claude Code stores nothing centrally",
-        "anonymized": not args.keep_project_names,
+    entry = {
+        "name": args.machine,
+        "collected_at": stamp(),
+        "source": "collector",
         "period": {
             "first": min(stamps).strftime("%Y-%m-%d") if stamps else None,
             "last":  max(stamps).strftime("%Y-%m-%d") if stamps else None,
@@ -164,17 +333,8 @@ def main():
         "agents_nested": nested,
         "projects": rows,
     }
-
-    dest = args.out if os.path.isabs(args.out) else os.path.join(os.getcwd(), args.out)
-    os.makedirs(os.path.dirname(dest) or ".", exist_ok=True)
-    with open(dest, "w", encoding="utf-8") as f:
-        json.dump(out, f, indent=1, ensure_ascii=False)
-    t = out["totals"]
-    print("ecrit %s" % args.out)
-    print("  %(sessions)d sessions, %(transcripts_on_disk)d transcripts sur disque, "
-          "%(agents)d agents, %(prompts)d prompts, %(projects)d projets" % t)
-    print("  periode %s -> %s, poste : %s"
-          % (out["period"]["first"], out["period"]["last"], out["machine"]))
+    write_snapshot(args.out, upsert(load_existing(args.out), entry),
+                   anonymized=not args.keep_project_names)
 
 
 if __name__ == "__main__":

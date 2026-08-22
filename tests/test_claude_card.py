@@ -86,8 +86,12 @@ class TestClaudeCard(unittest.TestCase):
         self.assertIn("158 transcripts still on disk", self.svg)
 
     def test_month_bars_use_short_labels(self):
-        for label in ("Jun", "Jul", "Aug"):
+        for label in ("Jul", "Aug"):
             self.assertIn(">%s<" % label, self.svg)
+
+    def test_first_bar_carries_the_year(self):
+        # Sur une periode a cheval sur deux annees, "Jan" seul est ambigu.
+        self.assertIn(">Jun 26<", self.svg)
 
     def test_model_bar_spans_the_full_width_exactly(self):
         import re
@@ -101,6 +105,101 @@ class TestClaudeCard(unittest.TestCase):
         for x, y in re.findall(r'<(?:rect|text) x="([\d.]+)" y="([\d.]+)"', self.svg):
             self.assertLessEqual(float(x), self.w - 24)
             self.assertLessEqual(float(y), self.h)
+
+
+class TestMachineSectionOnCard(unittest.TestCase):
+    """La carte doit nommer les postes, pas seulement leur somme."""
+
+    @classmethod
+    def setUpClass(cls):
+        snap = dict(SNAPSHOT)
+        snap["machines"] = [
+            {"name": "Tour", "source": "collector",
+             "totals": {"sessions": 1546, "agents": 19, "prompts": 6249}},
+            {"name": "MacBook Air", "source": "collector",
+             "totals": {"sessions": 245, "agents": 529, "prompts": 1249}},
+        ]
+        m = load_module(snapshot=snap)
+        cls.w, cls.h, cls.svg = m.card_claude(m.THEMES["light"])
+
+    def test_each_machine_is_named_with_its_own_figures(self):
+        self.assertIn(">Tour<", self.svg)
+        self.assertIn(">MacBook Air<", self.svg)
+        self.assertIn(">1\u2009546<", self.svg)   # espace fine, comme nfmt
+        self.assertIn(">245<", self.svg)
+
+    def test_subtitle_names_both_instead_of_claiming_one(self):
+        self.assertIn("Tour + MacBook Air", self.svg)
+        self.assertNotIn("only \u00b7", self.svg)
+
+    def test_card_grew_to_fit_the_section(self):
+        self.assertGreater(self.h, 308)
+
+    def test_nothing_spills_out_of_the_taller_frame(self):
+        import re
+        for x, y in re.findall(r'<(?:rect|text) x="([\d.-]+)" y="([\d.-]+)"', self.svg):
+            self.assertLessEqual(float(x), self.w - 24)
+            self.assertLessEqual(float(y), self.h)
+
+
+class TestMultipleMachines(unittest.TestCase):
+    """Fusion de deux postes dans un seul instantane."""
+
+    def setUp(self):
+        import collect_claude
+        self.mod = collect_claude
+        self.mac = {
+            "name": "MacBook Air", "source": "collector",
+            "period": {"first": "2026-01-06", "last": "2026-08-22"},
+            "totals": {"sessions": 245, "transcripts_on_disk": 158,
+                       "agents": 529, "prompts": 1249, "projects": 29},
+            "prompts_by_month": {"2026-07": 422, "2026-08": 512},
+            "agents_by_model": {"sonnet": 370}, "agents_by_type": {}, "agents_nested": 3,
+        }
+        self.tour = {
+            "name": "Tour", "source": "collector",
+            "period": {"first": "2025-10-03", "last": "2026-08-19"},
+            "totals": {"sessions": 1546, "transcripts_on_disk": 151,
+                       "agents": 19, "prompts": 6249, "projects": 101},
+            "prompts_by_month": {"2025-10": 30, "2026-08": 187},
+            "agents_by_model": {"unknown": 19}, "agents_by_type": {}, "agents_nested": 0,
+        }
+
+    def test_totals_are_the_sum(self):
+        a = self.mod.aggregate([self.tour, self.mac])
+        self.assertEqual(a["totals"]["sessions"], 1791)
+        self.assertEqual(a["totals"]["agents"], 548)
+        self.assertEqual(a["totals"]["prompts"], 7498)
+
+    def test_period_spans_both(self):
+        a = self.mod.aggregate([self.tour, self.mac])
+        self.assertEqual(a["period"], {"first": "2025-10-03", "last": "2026-08-22"})
+
+    def test_months_are_added_not_replaced(self):
+        a = self.mod.aggregate([self.tour, self.mac])
+        self.assertEqual(a["prompts_by_month"]["2026-08"], 512 + 187)
+        self.assertEqual(a["prompts_by_month"]["2025-10"], 30)
+
+    def test_recollecting_a_machine_replaces_it(self):
+        # Relancer la collecte sur un poste ne doit pas le compter deux fois.
+        again = dict(self.mac, totals=dict(self.mac["totals"], sessions=250))
+        merged = self.mod.upsert([self.tour, self.mac], again)
+        self.assertEqual(len(merged), 2)
+        self.assertEqual(self.mod.aggregate(merged)["totals"]["sessions"], 1546 + 250)
+
+    def test_a_machine_without_model_detail_does_not_fake_a_zero(self):
+        # La commande courte ne donne pas la repartition par modele : le poste
+        # est exclu de cette somme, et la carte peut le dire.
+        reported = {k: v for k, v in self.tour.items() if k != "agents_by_model"}
+        a = self.mod.aggregate([reported, self.mac])
+        self.assertEqual(a["agents_by_model"], {"sonnet": 370})
+        self.assertEqual(a["model_split_machines"], 1)
+
+    def test_months_parser_rejects_junk(self):
+        self.assertEqual(self.mod.parse_months("2026-03:10,2026-04:50"),
+                         {"2026-03": 10, "2026-04": 50})
+        with self.assertRaises(SystemExit):
+            self.mod.parse_months("mars:10")
 
 
 class TestCardIsOptional(unittest.TestCase):
@@ -163,8 +262,15 @@ class TestCollector(unittest.TestCase):
         self.assertNotIn("client", raw)         # ni le nom du projet
         self.assertNotIn("secret", raw)         # ni le texte des prompts
         self.assertNotIn("/Users/", raw)        # ni le chemin du poste
-        self.assertEqual(d["projects"][0]["key"], "project-01")
+        self.assertEqual(d["machines"][0]["projects"][0]["key"], "project-01")
         self.assertTrue(d["anonymized"])
+
+    def test_totals_sit_at_the_top_level_whatever_the_machine_count(self):
+        # Les cartes lisent le total la ou il a toujours ete : un poste de
+        # plus ne doit pas casser leur lecture.
+        _, d = self.run_collect()
+        self.assertEqual(d["totals"]["sessions"], 2)
+        self.assertEqual(d["machines"][0]["name"], "Tour")
 
     def test_real_names_only_on_explicit_request(self):
         raw, d = self.run_collect(["--keep-project-names"])

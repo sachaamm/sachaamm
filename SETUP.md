@@ -65,21 +65,46 @@ So `data/claude-code.json` is **committed**, unlike `data/github-profile.json`
 which is regenerated on every run — that is why `.gitignore` uses `data/*` plus
 an explicit exception rather than `data/`.
 
+### Several workstations
+
+The snapshot holds one entry per machine and the sum on top. Run the collector
+on each machine, against the same file — it replaces the entry with that name
+and recomputes the totals, so re-running is idempotent and never double-counts:
+
 ```bash
+# on the desktop
+python3 scripts/collect_claude.py --machine "Tour" --out data/claude-code.json
+# on the laptop, after pulling
 python3 scripts/collect_claude.py --machine "MacBook Air" --out data/claude-code.json
 python3 scripts/render_cards.py
 git add data/claude-code.json assets/claude-*.svg
 ```
 
+For a machine where the repository is not checked out, run the one-line reader
+there and transcribe the figures instead:
+
+```bash
+python3 scripts/collect_claude.py --add-machine "Tour" \
+  --sessions 1546 --transcripts 151 --agents 19 --prompts 6249 --projects 101 \
+  --months "2025-10:30,2025-11:22" --out data/claude-code.json
+```
+
+Such an entry is marked `"source": "reported"`. It carries no per-model
+breakdown — the short reader does not produce one — so the aggregate leaves it
+out of that sum rather than counting it as zero, and records in
+`model_split_machines` how many machines the model bar actually covers.
+
+The two sets never collide: session ids are UUIDs generated per machine.
+
 Three consequences worth stating on the card itself, and the card does state them:
 
-- **One machine.** Numbers from a second workstation have to be collected there
-  and added by hand. Session ids are UUIDs, so the two sets never overlap.
+- **Per machine.** Nothing is collected remotely; each workstation is read
+  where it sits, then merged into the same file.
 - **A floor, not a total.** `history.jsonl` only reaches back as far as the local
   file does — sessions older than that are gone.
-- **Sessions ≠ transcripts.** 245 sessions appear in the local prompt history;
-  158 transcripts are still on disk, because Claude Code prunes. The card prints
-  both instead of picking the flattering one.
+- **Sessions ≠ transcripts.** Sessions are counted from each machine's prompt
+  history; transcripts still on disk are far fewer, because Claude Code prunes.
+  The card prints both instead of picking the flattering one.
 
 What the collector reads: counters, timestamps, and each subagent's
 `.meta.json` (type, model, depth). What it never reads: the text of prompts or
