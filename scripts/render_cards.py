@@ -113,6 +113,23 @@ ai_year = defaultdict(int)
 for r in airepos:
     ai_year[r["created_at"][:4]] += 1
 
+# Instantane Claude Code : local, versionne, pris sur un seul poste. Absent
+# d'un checkout qui n'a jamais lance collect_claude.py — la carte saute alors,
+# plutot que d'afficher des zeros qui passeraient pour une mesure.
+CLAUDE_DATA = os.environ.get("CLAUDE_DATA") or os.path.join(HERE, "data", "claude-code.json")
+cc = None
+if os.path.exists(CLAUDE_DATA):
+    with open(CLAUDE_DATA, encoding="utf-8") as _f:
+        cc = json.load(_f)
+
+MONTH_ABBR = ["", "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+              "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+
+def month_label(key):
+    """'2026-07' -> 'Jul'."""
+    y, m = key.split("-")
+    return MONTH_ABBR[int(m)]
+
 
 # ================================================================= carte 1
 def card_overview(th):
@@ -310,8 +327,81 @@ def card_repos(th):
     return W, H, o
 
 
+
+# ================================================================= carte 6
+def card_claude(th):
+    """Usage de Claude Code — un seul poste, une seule date.
+
+    Les autres cartes se regenerent toutes les semaines depuis l'API GitHub.
+    Celle-ci ne le peut pas : Claude Code n'ecrit que dans ~/.claude, sur la
+    machine qui a servi. Le sous-titre le dit, plutot que de laisser croire a
+    un total.
+    """
+    W, H = 840, 308
+    t = cc["totals"]
+    per = cc.get("period") or {}
+    span = ("%s \u2192 %s" % (per.get("first"), per.get("last"))
+            if per.get("first") else "period unknown")
+    o = frame(W, H, th, "Claude Code usage",
+              "%s only \u00b7 %s \u00b7 snapshot of %s, not auto-refreshed"
+              % (cc.get("machine", "one machine"), span, cc["generated_at"][:10]))
+
+    kpis = [(nfmt(t["sessions"]),  "sessions"),
+            (nfmt(t["agents"]),    "subagents spawned"),
+            (nfmt(t["prompts"]),   "prompts sent"),
+            (nfmt(t["projects"]),  "projects touched")]
+    x, bw = 24, 194
+    for val, lab in kpis:
+        o += f'<rect x="{x}" y="70" width="{bw}" height="62" rx="9" fill="{th["soft"]}"/>'
+        o += txt(x + 14, 100, val, 20, "tp", "650", th=th)
+        o += txt(x + 14, 118, lab, 10.5, "ts", th=th)
+        x += bw + 4
+
+    # --- prompts par mois : la courbe d'adoption, en clair
+    o += txt(24, 158, "PROMPTS PER MONTH", 10, "tm", "600", th=th)
+    months = list((cc.get("prompts_by_month") or {}).items())[-12:]
+    mx = max([v for _, v in months] or [1]) or 1
+    x, base, hmax = 24, 212, 34
+    for key, v in months:
+        h = (v / mx) * hmax
+        o += (f'<rect x="{x}" y="{base-h:.1f}" width="42" height="{max(h,2):.1f}" rx="3" '
+              f'fill="{th["s1"]}"/>')
+        o += txt(x + 21, base - h - 6, nfmt(v), 10.5, "tp", "650", "middle", th)
+        o += txt(x + 21, base + 15, month_label(key), 10.5, "tm", anchor="middle", th=th)
+        x += 56
+
+    # --- repartition des agents par modele, en une barre empilee
+    o += txt(24, 256, "SUBAGENTS BY MODEL", 10, "tm", "600", th=th)
+    models = list((cc.get("agents_by_model") or {}).items())
+    total = sum(v for _, v in models) or 1
+    colours = {"opus": "s2", "sonnet": "s1", "haiku": "s3"}
+    x, bar_w = 24, W - 48
+    for name, v in models:
+        w = bar_w * v / total
+        o += (f'<rect x="{x:.1f}" y="266" width="{max(w,1):.1f}" height="12" '
+              f'fill="{th[colours.get(name, "gray")]}"/>')
+        x += w
+    lx = 24
+    for name, v in models:
+        o += (f'<rect x="{lx}" y="289" width="9" height="9" rx="2" '
+              f'fill="{th[colours.get(name, "gray")]}"/>')
+        lab = "%s %s" % (name, nfmt(v))
+        o += txt(lx + 14, 297, lab, 10.5, "tm", th=th)
+        lx += 14 + len(lab) * 6 + 18
+
+    # Les deux chiffres divergent parce que Claude Code elague ses transcripts.
+    # Annoncer le plus flatteur sans dire lequel serait trompeur.
+    o += txt(W - 24, 297,
+             "%s transcripts still on disk \u2014 older sessions counted from local history"
+             % nfmt(t["transcripts_on_disk"]),
+             10.5, "tm", anchor="end", th=th)
+    return W, H, o
+
+
 CARDS = {"overview": card_overview, "activity": card_activity,
          "stack": card_stack, "repos": card_repos, "agentic": card_agentic}
+if cc:
+    CARDS["claude"] = card_claude
 
 def main():
     os.makedirs(OUT, exist_ok=True)

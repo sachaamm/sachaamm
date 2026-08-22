@@ -9,12 +9,13 @@ of which 171 are private — a very different picture.
 ## Pipeline
 
 ```
-scripts/collect.py       GitHub API  →  data/github-profile.json   (anonymised)
-scripts/render_cards.py  that JSON   →  assets/*.svg               (8 files: 4 cards × light/dark)
-.github/workflows/update-stats.yml   runs both, weekly, and commits the SVGs
+scripts/collect.py        GitHub API  →  data/github-profile.json  (anonymised, gitignored)
+scripts/collect_claude.py ~/.claude   →  data/claude-code.json     (anonymised, COMMITTED)
+scripts/render_cards.py   both JSONs  →  assets/*.svg              (12 files: 6 cards × light/dark)
+.github/workflows/update-stats.yml    runs collect.py + render, weekly, and commits the SVGs
 ```
 
-Neither script has external dependencies — plain Python 3.8+ and `urllib`.
+None of the three scripts has an external dependency — plain Python 3.8+ and `urllib`.
 
 ## One-time setup
 
@@ -53,6 +54,41 @@ export GITHUB_TOKEN=ghp_xxx
 python3 scripts/collect.py --out data/github-profile.json
 python3 scripts/render_cards.py
 ```
+
+## Claude Code snapshot
+
+The *Claude Code usage* card is the one card Actions cannot refresh. Claude Code
+keeps no central record: sessions, prompts and subagent metadata live in
+`~/.claude` on whichever machine you typed on. A CI runner has none of it.
+
+So `data/claude-code.json` is **committed**, unlike `data/github-profile.json`
+which is regenerated on every run — that is why `.gitignore` uses `data/*` plus
+an explicit exception rather than `data/`.
+
+```bash
+python3 scripts/collect_claude.py --machine "MacBook Air" --out data/claude-code.json
+python3 scripts/render_cards.py
+git add data/claude-code.json assets/claude-*.svg
+```
+
+Three consequences worth stating on the card itself, and the card does state them:
+
+- **One machine.** Numbers from a second workstation have to be collected there
+  and added by hand. Session ids are UUIDs, so the two sets never overlap.
+- **A floor, not a total.** `history.jsonl` only reaches back as far as the local
+  file does — sessions older than that are gone.
+- **Sessions ≠ transcripts.** 245 sessions appear in the local prompt history;
+  158 transcripts are still on disk, because Claude Code prunes. The card prints
+  both instead of picking the flattering one.
+
+What the collector reads: counters, timestamps, and each subagent's
+`.meta.json` (type, model, depth). What it never reads: the text of prompts or
+of agent transcripts. Project paths are replaced by `project-01`, `project-02`,
+… before anything is written — they carry client names. `--keep-project-names`
+disables that, and is not what you want for a public profile.
+
+If `data/claude-code.json` is absent, `render_cards.py` simply drops the card
+and renders the other five. A checkout that never ran the collector still works.
 
 ## Privacy
 
@@ -141,8 +177,9 @@ whose stats never arrive shows `—`, never `0`.
 ## Tests
 
 `python3 -m unittest discover -s tests` — no dependencies, no network. Covers path
-exclusion, line estimation, the naming whitelist, churn aggregation, and the rendering
-of the *Top repositories* card. CI runs them before rendering.
+exclusion, line estimation, the naming whitelist, churn aggregation, the rendering
+of the *Top repositories* and *Claude Code usage* cards, and the anonymisation of the
+Claude Code collector. CI runs them before rendering.
 
 ## Customising
 

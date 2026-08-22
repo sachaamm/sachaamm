@@ -1,0 +1,244 @@
+{
+ "schema": "claude-code-usage/1.0",
+ "generated_at": "2026-08-22T07:16:26Z",
+ "machine": "MacBook Air",
+ "scope": "single machine — Claude Code stores nothing centrally",
+ "anonymized": true,
+ "period": {
+  "first": "2026-01-06",
+  "last": "2026-08-22"
+ },
+ "totals": {
+  "sessions": 245,
+  "transcripts_on_disk": 158,
+  "agents": 529,
+  "prompts": 1239,
+  "projects": 29
+ },
+ "prompts_by_month": {
+  "2026-01": 3,
+  "2026-02": 23,
+  "2026-03": 2,
+  "2026-04": 17,
+  "2026-05": 44,
+  "2026-06": 216,
+  "2026-07": 422,
+  "2026-08": 512
+ },
+ "agents_by_model": {
+  "sonnet": 370,
+  "opus": 92,
+  "haiku": 59,
+  "unknown": 8
+ },
+ "agents_by_type": {
+  "general-purpose": 528,
+  "Explore": 1
+ },
+ "agents_nested": 3,
+ "projects": [
+  {
+   "key": "project-01",
+   "sessions": 108,
+   "transcripts": 123,
+   "agents": 243,
+   "prompts": 576
+  },
+  {
+   "key": "project-02",
+   "sessions": 60,
+   "transcripts": 13,
+   "agents": 158,
+   "prompts": 270
+  },
+  {
+   "key": "project-03",
+   "sessions": 25,
+   "transcripts": 0,
+   "agents": 0,
+   "prompts": 89
+  },
+  {
+   "key": "project-04",
+   "sessions": 14,
+   "transcripts": 0,
+   "agents": 0,
+   "prompts": 101
+  },
+  {
+   "key": "project-05",
+   "sessions": 6,
+   "transcripts": 4,
+   "agents": 0,
+   "prompts": 14
+  },
+  {
+   "key": "project-06",
+   "sessions": 3,
+   "transcripts": 0,
+   "agents": 0,
+   "prompts": 23
+  },
+  {
+   "key": "project-07",
+   "sessions": 3,
+   "transcripts": 3,
+   "agents": 0,
+   "prompts": 12
+  },
+  {
+   "key": "project-08",
+   "sessions": 3,
+   "transcripts": 0,
+   "agents": 0,
+   "prompts": 17
+  },
+  {
+   "key": "project-09",
+   "sessions": 2,
+   "transcripts": 2,
+   "agents": 24,
+   "prompts": 11
+  },
+  {
+   "key": "project-10",
+   "sessions": 2,
+   "transcripts": 0,
+   "agents": 0,
+   "prompts": 3
+  },
+  {
+   "key": "project-11",
+   "sessions": 2,
+   "transcripts": 0,
+   "agents": 0,
+   "prompts": 11
+  },
+  {
+   "key": "project-12",
+   "sessions": 2,
+   "transcripts": 2,
+   "agents": 0,
+   "prompts": 22
+  },
+  {
+   "key": "project-13",
+   "sessions": 2,
+   "transcripts": 2,
+   "agents": 0,
+   "prompts": 11
+  },
+  {
+   "key": "project-14",
+   "sessions": 2,
+   "transcripts": 0,
+   "agents": 0,
+   "prompts": 21
+  },
+  {
+   "key": "project-15",
+   "sessions": 1,
+   "transcripts": 1,
+   "agents": 26,
+   "prompts": 4
+  },
+  {
+   "key": "project-16",
+   "sessions": 1,
+   "transcripts": 0,
+   "agents": 0,
+   "prompts": 2
+  },
+  {
+   "key": "project-17",
+   "sessions": 1,
+   "transcripts": 1,
+   "agents": 0,
+   "prompts": 1
+  },
+  {
+   "key": "project-18",
+   "sessions": 1,
+   "transcripts": 0,
+   "agents": 0,
+   "prompts": 1
+  },
+  {
+   "key": "project-19",
+   "sessions": 1,
+   "transcripts": 0,
+   "agents": 0,
+   "prompts": 6
+  },
+  {
+   "key": "project-20",
+   "sessions": 1,
+   "transcripts": 0,
+   "agents": 0,
+   "prompts": 1
+  },
+  {
+   "key": "project-21",
+   "sessions": 1,
+   "transcripts": 0,
+   "agents": 0,
+   "prompts": 19
+  },
+  {
+   "key": "project-22",
+   "sessions": 1,
+   "transcripts": 0,
+   "agents": 0,
+   "prompts": 9
+  },
+  {
+   "key": "project-23",
+   "sessions": 1,
+   "transcripts": 1,
+   "agents": 0,
+   "prompts": 10
+  },
+  {
+   "key": "project-24",
+   "sessions": 1,
+   "transcripts": 1,
+   "agents": 0,
+   "prompts": 2
+  },
+  {
+   "key": "project-25",
+   "sessions": 1,
+   "transcripts": 1,
+   "agents": 0,
+   "prompts": 3
+  },
+  {
+   "key": "project-26",
+   "sessions": 0,
+   "transcripts": 1,
+   "agents": 33,
+   "prompts": 0
+  },
+  {
+   "key": "project-27",
+   "sessions": 0,
+   "transcripts": 1,
+   "agents": 26,
+   "prompts": 0
+  },
+  {
+   "key": "project-28",
+   "sessions": 0,
+   "transcripts": 1,
+   "agents": 19,
+   "prompts": 0
+  },
+  {
+   "key": "project-29",
+   "sessions": 0,
+   "transcripts": 1,
+   "agents": 0,
+   "prompts": 0
+  }
+ ]
+}

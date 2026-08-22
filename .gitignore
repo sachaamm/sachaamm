@@ -1,3 +1,9 @@
 # Données brutes régénérées à chaque run — non versionnées.
 # Elles sont anonymisées, mais inutile de les publier : seules les cartes SVG comptent.
-data/
+data/*
+
+# Exception : l'instantane Claude Code est versionne.
+# Il ne vient pas d'une API mais de ~/.claude, sur un seul poste : Actions ne
+# peut pas le regenerer, donc render_cards.py ne le retrouverait jamais s'il
+# n'etait pas commite.
+!data/claude-code.json

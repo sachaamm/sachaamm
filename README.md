@@ -87,6 +87,22 @@
 
 ---
 
+### 🤖 Claude Code
+
+> How much of the work above actually runs through agents. Unlike every card
+> on this page, this one is **not** refreshed weekly: Claude Code writes only
+> to `~/.claude` on the machine you sit at, and no API exposes it — so this is
+> a hand-taken snapshot from **one laptop**, and a floor rather than a total.
+> My desktop tower is not counted yet. Project names never leave the machine;
+> only counters do. Regenerate with `python3 scripts/collect_claude.py`.
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="assets/claude-dark.svg">
+  <img alt="Claude Code usage on one machine: 245 sessions, 529 subagents, 1239 prompts across 29 projects" src="assets/claude-light.svg" width="840">
+</picture>
+
+---
+
 ### 🚀 Featured Projects
 
 | Project | Description | Tech |
