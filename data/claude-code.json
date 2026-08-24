@@ -1,12 +1,12 @@
 {
  "schema": "claude-code-usage/2.0",
- "generated_at": "2026-08-22T07:53:04Z",
+ "generated_at": "2026-08-22T08:03:30Z",
  "scope": "2 machine(s) — Claude Code stores nothing centrally",
  "anonymized": true,
  "machines": [
   {
    "name": "Tour",
-   "collected_at": "2026-08-22T07:46:06Z",
+   "collected_at": "2026-08-22T08:03:30Z",
    "source": "collector",
    "period": {
     "first": "2025-10-03",
