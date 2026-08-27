@@ -26,7 +26,8 @@ import urllib.request, urllib.error, urllib.parse
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from statslib import (loc_from_tree, est_lines, repos_to_name,
-                      apply_naming, author_churn, repo_is_vendored)
+                      apply_naming, author_churn, repo_is_vendored,
+                      repos_active_since, months_before)
 
 API = "https://api.github.com"
 
@@ -126,6 +127,45 @@ READ_CONTENT = {"package.json", "composer.json", "requirements.txt",
 
 
 # ----------------------------------------------------------------------------
+README_CHARS = 4000          # de quoi cerner un projet, pas de quoi le cloner
+SURFACE_FILES = 40
+
+
+def fetch_readme(gh, full):
+    """Debut du README, en texte. None si le depot n'en a pas."""
+    data, _ = gh.get("/repos/%s/readme" % full)
+    if not data or not data.get("content"):
+        return None
+    try:
+        text = base64.b64decode(data["content"]).decode("utf-8", "replace")
+    except Exception:
+        return None
+    text = text.strip()
+    return {"name": data.get("name"),
+            "chars": len(text),
+            "excerpt": text[:README_CHARS]}
+
+
+def surface(paths):
+    """Ce que montre la racine : dossiers de premier niveau et fichiers cles.
+
+    L'arborescence complete est deja telechargee pour compter les lignes ;
+    on n'en garde que la forme, pas le detail.
+    """
+    dirs, roots = defaultdict(int), []
+    for p in paths:
+        head, sep, _ = p.partition("/")
+        if sep:
+            dirs[head] += 1
+        else:
+            roots.append(p)
+    return {
+        "top_dirs": [{"name": k, "files": v}
+                     for k, v in sorted(dirs.items(), key=lambda kv: -kv[1])[:15]],
+        "root_files": sorted(roots)[:SURFACE_FILES],
+    }
+
+
 class GH:
     def __init__(self, token):
         self.token = token
@@ -214,6 +254,10 @@ def main():
                     help="repos qui restent anonymes quoi qu'il arrive (separes par des virgules)")
     ap.add_argument("--vendored-repos", default="",
                     help="depots entierement tiers, exclus en bloc du compte de lignes")
+    ap.add_argument("--active-months", type=int, default=8,
+                    help="fenetre d'activite : un depot commite dans cette "
+                         "fenetre garde son nom et recoit README + arborescence "
+                         "(0 pour desactiver)")
     ap.add_argument("--max-commit-pages", type=int, default=12)
     ap.add_argument("--out", default="github-profile.json")
     args = ap.parse_args()
@@ -251,6 +295,11 @@ def main():
     priv_i = 0
 
     total = len(repos)
+    # Fenetre d'activite, calculee une fois : un depot commite depuis cette
+    # date est considere vivant, donc nomme et enrichi.
+    active_since = (months_before(time.strftime("%Y-%m"), args.active_months)
+                    if args.active_months else None)
+
     for i, r in enumerate(repos, 1):
         full = r["full_name"]
         owner, name = full.split("/", 1)
@@ -281,13 +330,12 @@ def main():
             "open_issues": r.get("open_issues_count", 0),
             "primary_language": r.get("language"),
             "license": (r.get("license") or {}).get("spdx_id"),
-            "topics": r.get("topics", []) if not is_priv else [],
+            "topics": r.get("topics", []),
             "has_wiki": r.get("has_wiki"),
             "default_branch": r.get("default_branch"),
+            "description": r.get("description"),
+            "homepage": r.get("homepage"),
         }
-        if not is_priv:
-            entry["description"] = r.get("description")
-            entry["homepage"] = r.get("homepage")
 
         # --- langages en octets -------------------------------------------
         langs, _ = gh.get("/repos/%s/languages" % full)
@@ -349,6 +397,15 @@ def main():
             else:
                 entry["loc"] = loc_from_tree(blobs)
                 entry["loc_source"] = "tree"
+
+        # --- enrichissement des depots actifs ------------------------------
+        # De quoi ecrire une description : ce que dit le README, et ce que
+        # montre la racine. Reserve aux depots vivants — le faire partout
+        # couterait un appel par depot pour du code a l'arret.
+        last = entry.get("last_commit") or (entry.get("pushed_at") or "")[:7]
+        if active_since and last and last >= active_since:
+            entry["readme"] = fetch_readme(gh, full)
+            entry["structure"] = surface(paths)
 
         found_markers, workflows = set(), []
         for p in paths:
@@ -464,6 +521,10 @@ def main():
         named = {e["id"] for e in out_repos} - never
     else:
         named = repos_to_name(out_repos, top_n=args.name_top, never_name=never)
+        # Un depot actif garde son nom : sans nom, ni sa description ni son
+        # README ne veulent dire quoi que ce soit.
+        if active_since:
+            named |= repos_active_since(out_repos, active_since) - set(never)
     published = apply_naming(out_repos, named)
     hidden = len(out_repos) - len(published)
     print("\nNommage : %d noms reels publies, %d repos anonymises." % (len(published), hidden))
@@ -488,6 +549,9 @@ def main():
         "anonymized": hidden > 0,
         "naming_mode": "all" if args.keep_private_names else "whitelist",
         "name_top": args.name_top,
+        "active_since": active_since,
+        "active_repos": sorted(repos_active_since(out_repos, active_since))
+                        if active_since else [],
         "named_repos": published,
         "account": {
             "login": login,

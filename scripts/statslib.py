@@ -125,6 +125,27 @@ def loc_from_tree(blobs):
 
 
 # ---------------------------------------------------------------- nommage
+def repos_active_since(repos, cutoff):
+    """Depots ayant recu au moins un commit depuis `cutoff` (AAAA-MM).
+
+    `last_commit` vient des commits reellement echantillonnes ; `pushed_at`
+    sert de secours pour un depot dont aucun commit n'a ete date.
+    """
+    out = set()
+    for r in repos:
+        last = r.get("last_commit") or (r.get("pushed_at") or "")[:7]
+        if last and last >= cutoff:
+            out.add(r["id"])
+    return out
+
+
+def months_before(stamp, months):
+    """'2026-08' moins 8 mois -> '2025-12'."""
+    y, m = int(stamp[:4]), int(stamp[5:7])
+    total = y * 12 + (m - 1) - months
+    return "%04d-%02d" % (total // 12, total % 12 + 1)
+
+
 def repos_to_name(repos, top_n=10, never_name=()):
     """Repos autorisés à porter leur vrai nom.
 
@@ -158,13 +179,20 @@ def author_churn(stats, login):
     return None
 
 
+# Champs retires d'un depot qui reste anonyme. Toute donnee ajoutee au fil du
+# temps doit passer par ici : un README suffit a identifier un depot.
+ANONYMOUS_STRIPS = ("description", "homepage", "topics", "readme", "structure")
+
+
 def apply_naming(entries, named):
     """Applique la liste blanche : anonymise sur place tout le reste.
 
     Un repo public garde toujours son nom, il est déjà visible de tous. Un repo
     privé ne le garde que s'il figure dans `named`, c'est-à-dire s'il peut
     réellement apparaître sur une carte. Les autres deviennent private-001,
-    private-002… et perdent description et homepage, qui trahiraient le nom.
+    private-002… et perdent tout champ qui trahirait le nom : description,
+    homepage, topics, et l'enrichissement (README, arborescence) qui en dirait
+    bien davantage encore.
 
     Renvoie la liste triée des noms réels effectivement publiés.
     """
@@ -175,9 +203,8 @@ def apply_naming(entries, named):
             continue
         n += 1
         e["id"] = "private-%03d" % n
-        e.pop("description", None)
-        e.pop("homepage", None)
-        e.pop("topics", None)
+        for field in ANONYMOUS_STRIPS:
+            e.pop(field, None)
     return sorted(published)
 
 

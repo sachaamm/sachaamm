@@ -47,18 +47,33 @@ jobs:
           if leaked:
               sys.exit('ABORT: %d private repo names outside the whitelist.' % len(leaked))
 
-          # Seuls les noms PRIVES sont plafonnes : les repos publics gardent
-          # toujours le leur, ils sont deja visibles de tous. Le plafond suit
-          # les deux classements de la carte, avec une marge.
+          # Un nom prive publie doit se justifier : soit le depot figure au
+          # classement que la carte affiche, soit il est actif. Un plafond
+          # chiffre ne dirait plus rien maintenant que la fenetre d'activite
+          # ouvre la liste — cette regle-la, si.
           priv_named = [r['id'] for r in d['repos'] if r['private'] and r['id'] in named]
-          if len(priv_named) > 2 * NAME_TOP:
-              sys.exit('ABORT: %d private names whitelisted, more than the cards can show.'
-                       % len(priv_named))
+          top_ids = {r['id'] for r in sorted(d['repos'],
+                                             key=lambda x: x.get('my_commits') or 0,
+                                             reverse=True)[:NAME_TOP]}
+          active = set(d.get('active_repos') or [])
+          unjustified = [i for i in priv_named if i not in top_ids and i not in active]
+          if unjustified:
+              sys.exit('ABORT: %d private names neither ranked nor active: %s'
+                       % (len(unjustified), sorted(unjustified)[:5]))
           print("OK \u2014 %d repos, %d private." % (d['totals']['repos'], d['totals']['private']))
-          print("     %d real names published, of which %d private:"
-                % (len(named), len(priv_named)))
-          for n in sorted(priv_named):
-              print("       -", n)
+          print("     %d real names published, of which %d private." % (len(named), len(priv_named)))
+          print("     active window: %s, %d repositories in it."
+                % (d.get('active_since'), len(active)))
+
+          # Un depot anonyme ne doit conserver aucun champ qui le trahirait.
+          STRIPPED = ('description', 'homepage', 'topics', 'readme', 'structure')
+          bleeding = [r['id'] for r in d['repos']
+                      if r['id'].startswith('private-')
+                      and any(r.get(f) for f in STRIPPED)]
+          if bleeding:
+              sys.exit('ABORT: %d anonymised repos kept identifying fields: %s'
+                       % (len(bleeding), bleeding[:5]))
+          print("     anonymised repos carry no README, description or topics.")
           PY
 
       - name: Run tests
