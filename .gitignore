@@ -7,3 +7,7 @@ data/*
 # peut pas le regenerer, donc render_cards.py ne le retrouverait jamais s'il
 # n'etait pas commite.
 !data/claude-code.json
+
+# Caches Python, generes par les tests et les scripts.
+__pycache__/
+*.pyc

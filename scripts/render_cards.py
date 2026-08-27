@@ -77,6 +77,15 @@ gtot = sum(g.values()) or 1
 loc_written  = T.get("loc_written", 0)
 loc_vendored = T.get("loc_vendored", 0)
 
+# Lignes ecrites selon la visibilite du depot. Le total seul laisse croire a
+# un portfolio public : l'essentiel du code vit dans des depots prives, et
+# c'est la premiere question qu'on pose en le lisant.
+def _written(r):
+    return sum(((r.get("loc") or {}).get("written") or {}).values())
+loc_private = sum(_written(r) for r in R if r.get("private"))
+loc_public  = sum(_written(r) for r in R if not r.get("private"))
+loc_by_vis  = loc_private + loc_public or 1
+
 def mfmt(n):
     """54074266 -> 54.1M ; 31034 -> 31k."""
     if n >= 1e6:  return f"{n/1e6:.1f}M"
@@ -133,7 +142,7 @@ def month_label(key):
 
 # ================================================================= carte 1
 def card_overview(th):
-    W, H = 840, 286
+    W, H = 840, 330
     o = frame(W, H, th, "GitHub at a glance",
               f"{T['repos']} repositories · {T['public']} public · {T['private']} private"
               f" · {A['years_on_github']} years of history")
@@ -168,7 +177,22 @@ def card_overview(th):
         o += f'<rect x="{x:.1f}" y="231" width="10" height="10" rx="3" fill="{col}"/>'
         o += txt(x + 16, 240, name, 11.5, "ts", th=th)
         o += txt(x + colw - 14, 240, f"{100*v/gtot:.1f}%", 11.5, "tp", "600", "end", th)
-    o += txt(24, 259, "* estimated from source bytes, third-party and generated code excluded",
+    # --- ou vit ce code : depots prives ou publics
+    o += txt(24, 272, "LINES WRITTEN, BY REPOSITORY VISIBILITY", 10, "tm", "600", th=th)
+    x = 24
+    for label, v, col in (("private", loc_private, th["s1"]),
+                          ("public",  loc_public,  th["s3"])):
+        w = (W - 48) * v / loc_by_vis
+        share = 100 * v / loc_by_vis
+        o += f'<rect x="{x:.1f}" y="282" width="{max(w-2,1):.1f}" height="16" rx="4" fill="{col}"/>'
+        # Le pourcentage n'entre que dans un segment assez large ; ailleurs la
+        # largeur de la barre le dit deja, et un libelle en trop se chevauche.
+        text = f"{label} {mfmt(v)}" + (f" \u00b7 {share:.0f}%" if w > 200 else "")
+        if w > 88:
+            o += (f'<text x="{x+10:.1f}" y="294" font-family="{FONT}" font-size="11" '
+                  f'font-weight="650" fill="#ffffff">{esc(text)}</text>')
+        x += w
+    o += txt(24, 316, "* estimated from source bytes, third-party and generated code excluded",
              10, "tm", th=th)
     return W, H, o
 
